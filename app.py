@@ -13,6 +13,7 @@ import hmac
 import io
 import math
 import os
+import secrets
 import sqlite3
 from pathlib import Path
 
@@ -359,7 +360,8 @@ def import_drops(db, text, replace=False):
 def create_app(db_path=None):
     app = Flask(__name__)
     app.config["DB_PATH"] = str(db_path or os.environ.get("RMS_DB") or BASE_DIR / "rms_loot.db")
-    app.config["SECRET_KEY"] = os.environ.get("RMS_SECRET_KEY", "local-dev-only")
+    # 只用來簽署存提示訊息的 cookie，沒有登入功能，所以每次啟動自動產生即可
+    app.config["SECRET_KEY"] = os.environ.get("RMS_SECRET_KEY") or secrets.token_hex(32)
     app.jinja_env.globals["SLOTS"] = SLOTS
     app.jinja_env.filters["money"] = lambda v: "" if v is None else f"{v:g}"
 

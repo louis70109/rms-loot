@@ -28,12 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-      RMS_SECRET_KEY: ${{ secrets.RMS_SECRET_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Stage app secrets
-        run: |
-          flyctl secrets set --stage -a rms-loot-nj RMS_SECRET_KEY="$RMS_SECRET_KEY"
       - name: Deploy to fly.io
         run: flyctl deploy --remote-only -a rms-loot-nj

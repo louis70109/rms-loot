@@ -29,7 +29,6 @@ python3 -m venv .venv
 ## 設定（環境變數，選填）
 
 - `RMS_DB`：資料庫檔路徑，預設 `rms_loot.db`
-- `RMS_SECRET_KEY`：Flask secret key（目前沒有登入功能，只是保險起見）
 
 ## 測試
 
