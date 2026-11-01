@@ -29,7 +29,6 @@ python3 -m venv .venv
 ## 設定（環境變數，選填）
 
 - `RMS_DB`：資料庫檔路徑，預設 `rms_loot.db`
-- `RMS_SECRET_KEY`：Flask secret key（目前沒有登入功能，只是保險起見）
 
 ## 測試
 
@@ -39,5 +38,5 @@ python3 -m venv .venv
 
 ## 注意
 
-- 這個系統沒有登入機制，請只跑在自己電腦或內網；若要放到外網，先加上登入。
+- 預設沒有登入：知道網址的人都能看、改、刪資料。若要加上密碼，設定環境變數 `APP_PASSWORD` 即可（HTTP Basic，帳號隨意）。
 - 名字不分大小寫：ERIC / Eric / eric 會被視為同一人，沿用第一次輸入的寫法。
