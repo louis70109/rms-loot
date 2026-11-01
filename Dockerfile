@@ -3,7 +3,6 @@ FROM python:3.13-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     RMS_DB=/data/rms_loot.db \
-    RMS_REQUIRE_AUTH=1
 
 WORKDIR /app
 COPY requirements.txt .

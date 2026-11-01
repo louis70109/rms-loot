@@ -3,7 +3,6 @@ primary_region = "nrt"
 
 [env]
   RMS_DB = "/data/rms_loot.db"
-  RMS_REQUIRE_AUTH = "1"
 
 [mounts]
   source = "rms_data"
