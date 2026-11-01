@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h2>{{ title }}</h2>
+{% if errors %}
+  <div class="flash error">{% for e in errors %}<div>{{ e }}</div>{% endfor %}</div>
+{% endif %}
+<form method="post" action="{{ action }}" class="card form">
+  <label>掉落物（原表 v 欄）
+    <input name="item" value="{{ data.item }}" required>
+  </label>
+  <label>持有人（付款對象，原表 member 欄）
+    <input name="member" list="names" value="{{ data.member }}" required>
+  </label>
+  <div class="grid2">
+    <label>市價（原表 C 欄）
+      <input name="market_price" inputmode="decimal" value="{{ data.market_price|money }}">
+    </label>
+    <label>賣出價（原表 D 欄）
+      <input name="sale_price" inputmode="decimal" value="{{ data.sale_price|money }}">
+    </label>
+  </div>
+  <div class="grid2">
+    <label>賣出日（例：6/14）
+      <input name="sold_date" value="{{ data.sold_date }}">
+    </label>
+    <label class="check align-end">
+      <input type="checkbox" name="paid" value="1" {% if data.paid %}checked{% endif %}>
+      已付給持有人（原表 paid 打 v）
+    </label>
+  </div>
+  <datalist id="names">
+    {% for n in names %}<option value="{{ n }}"></option>{% endfor %}
+  </datalist>
+  <div class="actions-row">
+    <button class="btn">儲存</button>
+    <a href="{{ url_for('drops') }}">取消</a>
+  </div>
+</form>
+{% endblock %}

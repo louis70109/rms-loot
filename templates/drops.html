@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}掉落物{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>掉落物（{{ drops|length }} 件）</h2>
+  <a class="btn" href="{{ url_for('drop_new') }}">＋ 新增掉落物</a>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>掉落物</th><th>持有人</th>
+        <th>市價</th><th>賣出價</th><th>賣出日</th><th>付款</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in drops %}
+        <tr class="{{ 'row-paid' if d.paid else '' }}">
+          <td class="muted">{{ d.id }}</td>
+          <td>{{ d.item }}</td>
+          <td>{{ d.member }}</td>
+          <td class="num">{{ d.market_price|money }}</td>
+          <td class="num">{{ d.sale_price|money }}{% if d.sale_price is none %}<span class="badge warn">未填</span>{% endif %}</td>
+          <td>{{ d.sold_date }}</td>
+          <td>
+            <form method="post" action="{{ url_for('drop_toggle', drop_id=d.id) }}">
+              <button class="pill {{ 'paid' if d.paid else 'unpaid' }}" title="點一下切換">
+                {{ '已付' if d.paid else '未付' }}
+              </button>
+            </form>
+          </td>
+          <td class="actions">
+            <a href="{{ url_for('drop_edit', drop_id=d.id) }}">編輯</a>
+            <form method="post" action="{{ url_for('drop_delete', drop_id=d.id) }}"
+                  onsubmit="return confirm('確定刪除「{{ d.item }}」？')">
+              <button class="link danger">刪除</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="muted">還沒有掉落物。</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

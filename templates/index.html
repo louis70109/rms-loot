@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}總覽{% endblock %}
+{% block content %}
+<section>
+  <h2>人員統計</h2>
+  <p class="hint">「同行次數」= 有幾場以他為同行者；各捲欄位 = 他拿到幾次。
+    <span class="badge warn">下次換他撿</span> = 陪打、只打過一次，下次組隊換他撿。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>名字</th><th>同行次數</th>
+          {% for _, label in SLOTS %}<th>{{ label }}</th>{% endfor %}
+          <th>合計</th><th>提醒</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in people %}
+          <tr>
+            <td><strong>{{ p.name }}</strong></td>
+            <td>{{ p.runs }}</td>
+            {% for field, _ in SLOTS %}<td>{{ p.picks[field] }}</td>{% endfor %}
+            <td>{{ p.total_picks }}</td>
+            <td>
+              {% if p.next_turn %}<span class="badge warn">下次換他撿</span>{% endif %}
+              {% if p.guest_runs %}<span class="badge">陪打 {{ p.guest_runs }} 次</span>{% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" class="muted">還沒有紀錄</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>持有人應付金額（原表 G 欄）</h2>
+  <p class="hint">分潤比例 <strong>{{ "%g"|format(percent) }}%</strong>。
+    應付 = 未付的賣出價合計 × 比例；同名不分大小寫合併；還沒填賣出價的項目不計入（見「未填賣出價」）。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>持有人</th><th>未付項目</th><th>未付賣出價合計</th><th>應付金額</th><th>未填賣出價</th><th>已付項目</th></tr>
+      </thead>
+      <tbody>
+        {% for p in payouts %}
+          <tr>
+            <td><strong>{{ p.name }}</strong></td>
+            <td>{{ p.unpaid_items }}</td>
+            <td class="num">{{ "%.2f"|format(p.unpaid_sum) }}</td>
+            <td class="num {{ 'due' if p.payout > 0 else '' }}">{{ "%.2f"|format(p.payout) }}</td>
+            <td>{{ p.unpriced or "" }}</td>
+            <td>{{ p.paid_items }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" class="muted">還沒有掉落物</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

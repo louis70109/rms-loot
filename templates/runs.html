@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}分貝紀錄{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>分貝紀錄（{{ runs|length }} 場）</h2>
+  <a class="btn" href="{{ url_for('run_new') }}">＋ 新增一場</a>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>日期</th><th>同行者</th>
+        {% for _, label in SLOTS %}<th>{{ label }}</th>{% endfor %}
+        <th>備註</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in runs %}
+        <tr>
+          <td class="muted">{{ r.id }}</td>
+          <td>{{ r.run_date }}</td>
+          <td>
+            {% if r.partner %}
+              {{ r.partner }}{% if r.is_guest %} <span class="badge">陪打</span>{% endif %}
+            {% else %}<span class="muted">—</span>{% endif %}
+          </td>
+          {% for field, _ in SLOTS %}<td>{{ r[field] }}</td>{% endfor %}
+          <td>{{ r.note }}</td>
+          <td class="actions">
+            <a href="{{ url_for('run_edit', run_id=r.id) }}">編輯</a>
+            <form method="post" action="{{ url_for('run_delete', run_id=r.id) }}"
+                  onsubmit="return confirm('確定刪除第 {{ r.id }} 場？')">
+              <button class="link danger">刪除</button>
+            </form>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="muted">還沒有紀錄。按「新增一場」，或到「匯入 / 設定」匯入 CSV。</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

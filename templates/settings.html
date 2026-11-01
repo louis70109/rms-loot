@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}匯入 / 設定{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>分潤比例</h2>
+  <p class="hint">持有人應付 = 未付賣出價合計 × 這個比例。預設 100 = 全額。如果原表 G 欄有額外的比例或扣除規則，改這裡即可。</p>
+  <form method="post" action="{{ url_for('settings_payout') }}" class="inline">
+    <label>比例（%）
+      <input type="number" name="payout_percent" min="0" max="100" step="0.01" value="{{ '%g'|format(percent) }}">
+    </label>
+    <button class="btn">儲存</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>匯入分貝紀錄 CSV</h2>
+  <p class="hint">對應原表「RMS 分贓紀錄」那一頁。表頭需要：<code>A捲, B捲, C捲, tape</code>，可選 <code>陪打</code>（有名字 = 該場同行者是陪打）、<code>日期</code>、<code>備註</code>。
+    同行者會自動從得主欄推出（非 NJ 的名字）。任何一列有錯，整批都不會寫入。</p>
+  <form method="post" action="{{ url_for('import_runs_view') }}" enctype="multipart/form-data" class="form">
+    <input type="file" name="file" accept=".csv,text/csv" required>
+    <label class="check"><input type="checkbox" name="replace" value="1"> 先清空現有分貝紀錄再匯入（不勾 = 附加到後面）</label>
+    <button class="btn">匯入分貝紀錄</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>匯入掉落物 CSV</h2>
+  <p class="hint">對應原表「掉落物」那一頁。表頭需要：<code>v, member, price, sale price, sold, paid</code>。
+    paid 欄填 v（或 ✓、y、yes、1）= 已付。</p>
+  <form method="post" action="{{ url_for('import_drops_view') }}" enctype="multipart/form-data" class="form">
+    <input type="file" name="file" accept=".csv,text/csv" required>
+    <label class="check"><input type="checkbox" name="replace" value="1"> 先清空現有掉落物再匯入（不勾 = 附加到後面）</label>
+    <button class="btn">匯入掉落物</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>怎麼從 Google 試算表匯出</h2>
+  <ol class="hint">
+    <li>切到要匯出的那一頁（分貝紀錄、掉落物分開做）。</li>
+    <li>選單：<strong>檔案 → 下載 → 逗號分隔值 (.csv，目前工作表)</strong>。</li>
+    <li>回到這裡上傳。第一列一定要是表頭。</li>
+  </ol>
+</section>
+{% endblock %}

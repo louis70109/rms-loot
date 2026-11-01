@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h2>{{ title }}</h2>
+{% if errors %}
+  <div class="flash error">{% for e in errors %}<div>{{ e }}</div>{% endfor %}</div>
+{% endif %}
+<form method="post" action="{{ action }}" class="card form">
+  <div class="grid2">
+    <label>日期（選填）
+      <input name="run_date" value="{{ data.run_date }}" placeholder="例：7/19">
+    </label>
+    <label>同行者
+      <input name="partner" list="names" value="{{ data.partner }}" placeholder="例：ERIC、KIA；沒有就留空">
+    </label>
+  </div>
+  <label class="check">
+    <input type="checkbox" name="is_guest" value="1" {% if data.is_guest %}checked{% endif %}>
+    陪打（只打過一次，下次再組隊就換他撿）
+  </label>
+  <fieldset>
+    <legend>各捲得主：填 NJ 或同行者名字；留空 = 這捲沒掉</legend>
+    <div class="grid4">
+      {% for field, label in SLOTS %}
+        <label>{{ label }}
+          <input name="{{ field }}" list="names" value="{{ data[field] }}">
+        </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+  <label>備註
+    <input name="note" value="{{ data.note }}">
+  </label>
+  <datalist id="names">
+    <option value="NJ"></option>
+    {% for n in names %}<option value="{{ n }}"></option>{% endfor %}
+  </datalist>
+  <div class="actions-row">
+    <button class="btn">儲存</button>
+    <a href="{{ url_for('runs') }}">取消</a>
+  </div>
+</form>
+{% endblock %}
