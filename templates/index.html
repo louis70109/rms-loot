@@ -35,6 +35,35 @@
 </section>
 
 <section>
+  <h2>跟每位同行者打到的（NJ 拿到的）</h2>
+  <p class="hint">每一列是一位同行者；欄位是那些場次中 NJ 拿到的次數。沒有同行者的場次另列在最後。</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>同行者</th><th>場數</th>
+          {% for _, label in SLOTS %}<th>{{ label }}</th>{% endfor %}
+          <th>合計</th><th>提醒</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in partners %}
+          <tr>
+            <td><strong>{{ p.name }}</strong></td>
+            <td>{{ p.runs }}</td>
+            {% for field, _ in SLOTS %}<td>{{ p.picks[field] }}</td>{% endfor %}
+            <td>{{ p.total }}</td>
+            <td>{% if p.guest_runs %}<span class="badge">陪打</span>{% endif %}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" class="muted">還沒有紀錄</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
   <h2>持有人應付金額（原表 G 欄）</h2>
   <p class="hint">應付 = 未付賣出價合計 × (1 − 手續費 <strong>{{ "%g"|format(fee) }}%</strong>) × 分配 <strong>{{ "%g"|format(share) }}%</strong>。
     只計入已有賣出價與賣出日、且未付的項目；同名不分大小寫合併。</p>

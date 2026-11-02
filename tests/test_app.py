@@ -228,3 +228,22 @@ def test_payout_details_list_items_and_formula(loaded, app):
     assert "計算式：KIA" not in page
     assert "154 × 97% × 50% = 74.69" in page
     assert "shield MA 60%" in page and "未計入（缺賣出價或賣出日）" in page
+
+def test_partner_breakdown_matches_sheet(loaded):
+    from app import build_partner_breakdown
+    rows = {p["name"]: p for p in build_partner_breakdown(loaded)}
+    assert rows["hangi"]["picks"]["tape_pick"] == 1       # 跟 hangi 打到 tape
+    assert rows["XL"]["picks"]["c_pick"] == 1             # 跟 XL 打到 C
+    assert rows["ERIC"]["total"] == 2                     # B、C
+    assert rows["KIA"]["total"] == 6 and rows["KIA"]["runs"] == 4
+    assert rows["（沒有同行者）"]["total"] == 8
+    assert sum(p["total"] for p in rows.values()) == 18   # 與 NJ 總數一致
+
+
+def test_drops_page_shows_payment_status_icons(app):
+    client = app.test_client()
+    client.post("/drops/new", data={"item": "A", "member": "KIA", "sale_price": "10", "sold_date": "1/1"})
+    client.post("/drops/new", data={"item": "B", "member": "KIA", "sale_price": "10", "sold_date": "1/1", "paid": "1"})
+    client.post("/drops/new", data={"item": "C", "member": "KIA", "sale_price": "10"})
+    page = client.get("/drops").get_data(as_text=True)
+    assert "⏳ 未付" in page and "✅ 已付" in page and "⚠️ 未完成" in page

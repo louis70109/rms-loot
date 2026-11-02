@@ -164,3 +164,13 @@ tr.has-error td { background: rgba(214, 69, 61, .10); }
 .detail-table tr.total td { border-top: 2px solid var(--line); border-bottom: none; }
 .formula { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 15px; margin: 8px 0 2px; }
 .formula-note { color: var(--muted); font-size: 13px; margin: 0 0 6px; }
+
+.paid-cell { white-space: nowrap; }
+.paid-cell input[type="checkbox"] { width: 18px; height: 18px; vertical-align: middle; margin-right: 6px; }
+.status {
+  display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px;
+  border: 1px solid var(--line); vertical-align: middle;
+}
+.status.paid { border-color: var(--ok); color: var(--ok); }
+.status.unpaid { border-color: var(--danger); color: var(--danger); }
+.status.incomplete { border-color: var(--warn-text); color: var(--warn-text); background: var(--warn-bg); }
