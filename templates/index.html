@@ -36,12 +36,12 @@
 
 <section>
   <h2>持有人應付金額（原表 G 欄）</h2>
-  <p class="hint">分潤比例 <strong>{{ "%g"|format(percent) }}%</strong>。
-    應付 = 未付的賣出價合計 × 比例；同名不分大小寫合併；還沒填賣出價的項目不計入（見「未填賣出價」）。</p>
+  <p class="hint">應付 = 未付賣出價合計 × (1 − 手續費 <strong>{{ "%g"|format(fee) }}%</strong>) × 分配 <strong>{{ "%g"|format(share) }}%</strong>。
+    只計入已有賣出價與賣出日、且未付的項目；同名不分大小寫合併。</p>
   <div class="table-wrap">
     <table>
       <thead>
-        <tr><th>持有人</th><th>未付項目</th><th>未付賣出價合計</th><th>應付金額</th><th>未填賣出價</th><th>已付項目</th></tr>
+        <tr><th>持有人</th><th>未付項目</th><th>未付賣出價合計</th><th>應付金額</th><th>未完成（缺賣出價或賣出日）</th><th>已付項目</th></tr>
       </thead>
       <tbody>
         {% for p in payouts %}
@@ -50,7 +50,7 @@
             <td>{{ p.unpaid_items }}</td>
             <td class="num">{{ "%.2f"|format(p.unpaid_sum) }}</td>
             <td class="num {{ 'due' if p.payout > 0 else '' }}">{{ "%.2f"|format(p.payout) }}</td>
-            <td>{{ p.unpriced or "" }}</td>
+            <td>{{ p.incomplete or "" }}</td>
             <td>{{ p.paid_items }}</td>
           </tr>
         {% else %}

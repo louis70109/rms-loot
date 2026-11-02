@@ -220,36 +220,42 @@ def build_people(db):
     return result
 
 
-def build_payouts(db, percent):
-    """每位持有人（不分大小寫合併）的未付金額，對應原表 G 欄。"""
+def build_payouts(db, fee_percent, share_percent):
+    """每位持有人（不分大小寫合併）的應付金額，對應原表 G 欄。
+
+    只計入「已賣出（有賣出價與賣出日）且未付」的項目；
+    應付 = 未付賣出價合計 × (1 - 手續費%) × 分配比例%。
+    例：154 × 0.97 ÷ 2 = 74.69。
+    """
     groups = {}
     for d in db.execute("SELECT * FROM drops ORDER BY id").fetchall():
         g_ = groups.setdefault(d["member"].lower(), {
             "name": d["member"], "paid_items": 0, "unpaid_items": 0,
-            "unpaid_sum": 0.0, "unpriced": 0})
+            "unpaid_sum": 0.0, "incomplete": 0})
         if d["paid"]:
             g_["paid_items"] += 1
-        elif d["sale_price"] is None:
-            g_["unpriced"] += 1
+        elif d["sale_price"] is None or not d["sold_date"]:
+            g_["incomplete"] += 1  # 還沒填賣出價或賣出日，先不計入
         else:
             g_["unpaid_items"] += 1
             g_["unpaid_sum"] += d["sale_price"]
 
+    factor = (100 - fee_percent) / 100 * share_percent / 100
     result = sorted(groups.values(), key=lambda x: x["name"].lower())
     for g_ in result:
         g_["unpaid_sum"] = round(g_["unpaid_sum"], 2)
-        g_["payout"] = round(g_["unpaid_sum"] * percent / 100, 2)
+        g_["payout"] = round(g_["unpaid_sum"] * factor, 2)
     return result
 
 
-def get_payout_percent(db):
-    row = db.execute("SELECT value FROM settings WHERE key = 'payout_percent'").fetchone()
-    return float(row["value"]) if row else 100.0
+def get_setting(db, key, default):
+    row = db.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+    return float(row["value"]) if row else default
 
 
-def set_payout_percent(db, percent):
-    db.execute("INSERT INTO settings (key, value) VALUES ('payout_percent', ?) "
-               "ON CONFLICT(key) DO UPDATE SET value = excluded.value", (str(percent),))
+def set_setting(db, key, value):
+    db.execute("INSERT INTO settings (key, value) VALUES (?, ?) "
+               "ON CONFLICT(key) DO UPDATE SET value = excluded.value", (key, str(value)))
 
 
 # ---------- CSV 匯入 ----------
@@ -428,9 +434,9 @@ def create_app(db_path=None):
     @app.get("/")
     def index():
         db = get_db()
-        percent = get_payout_percent(db)
+        fee, share = get_setting(db, "payout_fee_percent", 3.0), get_setting(db, "payout_share_percent", 50.0)
         return render_template("index.html", people=build_people(db),
-                               payouts=build_payouts(db, percent), percent=percent)
+                               payouts=build_payouts(db, fee, share), fee=fee, share=share)
 
     # 分贓紀錄
     @app.get("/runs")
@@ -534,21 +540,27 @@ def create_app(db_path=None):
     # 設定 / 匯入
     @app.get("/settings")
     def settings():
-        return render_template("settings.html", percent=get_payout_percent(get_db()))
+        db = get_db()
+        return render_template("settings.html", fee=get_setting(db, "payout_fee_percent", 3.0),
+                               share=get_setting(db, "payout_share_percent", 50.0))
 
     @app.post("/settings/payout")
     def settings_payout():
         db = get_db()
         try:
-            percent = float(clean(request.form.get("payout_percent")))
-            if not math.isfinite(percent) or not 0 <= percent <= 100:
+            fee = float(clean(request.form.get("fee_percent")))
+            share = float(clean(request.form.get("share_percent")))
+            if not (math.isfinite(fee) and math.isfinite(share)):
+                raise ValueError
+            if not (0 <= fee < 100 and 0 <= share <= 100):
                 raise ValueError
         except ValueError:
-            flash("分潤比例請填 0 到 100 之間的數字", "error")
+            flash("手續費請填 0 到 100 之間（不含 100），分配比例請填 0 到 100 之間", "error")
             return redirect(url_for("settings"))
-        set_payout_percent(db, percent)
+        set_setting(db, "payout_fee_percent", fee)
+        set_setting(db, "payout_share_percent", share)
         db.commit()
-        flash(f"分潤比例已設為 {percent:g}%", "ok")
+        flash(f"已設定：扣手續費 {fee:g}%，分配 {share:g}%", "ok")
         return redirect(url_for("settings"))
 
     @app.post("/import/runs")

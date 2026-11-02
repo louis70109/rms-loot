@@ -2,11 +2,14 @@
 {% block title %}匯入 / 設定{% endblock %}
 {% block content %}
 <section class="card">
-  <h2>分潤比例</h2>
-  <p class="hint">持有人應付 = 未付賣出價合計 × 這個比例。預設 100 = 全額。如果原表 G 欄有額外的比例或扣除規則，改這裡即可。</p>
+  <h2>應付金額計算</h2>
+  <p class="hint">應付 = 未付賣出價合計 × (1 − 手續費%) × 分配%。預設：手續費 3%、分配 50%（即 ×0.97 ÷ 2）。</p>
   <form method="post" action="{{ url_for('settings_payout') }}" class="inline">
-    <label>比例（%）
-      <input type="number" name="payout_percent" min="0" max="100" step="0.01" value="{{ '%g'|format(percent) }}">
+    <label>手續費（%）
+      <input type="number" name="fee_percent" min="0" max="99.99" step="0.01" value="{{ '%g'|format(fee) }}">
+    </label>
+    <label>分配比例（%）
+      <input type="number" name="share_percent" min="0" max="100" step="0.01" value="{{ '%g'|format(share) }}">
     </label>
     <button class="btn">儲存</button>
   </form>
