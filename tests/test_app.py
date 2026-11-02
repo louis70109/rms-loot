@@ -95,7 +95,7 @@ def test_run_rejects_picker_outside_party():
     assert any("KIA" in e for e in errors)
     data, errors = read_run_form(db, {"partner": "ERIC", "a_pick": "eric", "b_pick": "nj"})
     assert errors == []
-    assert data["a_pick"] == "eric"  # 資料庫裡還沒有這個名字，保留輸入寫法
+    assert data["a_pick"] == "ERIC"  # 得主與同行者是同一人，統一用同行者的寫法
     data, errors = read_run_form(db, {"is_guest": "1"})
     assert any("陪打" in e for e in errors)
     data, errors = read_run_form(db, {})
@@ -157,3 +157,19 @@ def test_local_dev_open_without_password(tmp_path, monkeypatch):
     monkeypatch.delenv("RMS_REQUIRE_AUTH", raising=False)
     client = create_app(tmp_path / "open.db").test_client()
     assert client.get("/").status_code == 200
+
+
+def test_names_case_insensitive_across_run_and_drops(app):
+    client = app.test_client()
+    client.post("/runs/new", data={"partner": "eric", "a_pick": "ERIC", "b_pick": "nj"})
+    client.post("/runs/new", data={"partner": "Eric", "a_pick": "eric", "c_pick": "Nj"})
+    client.post("/runs/new", data={"partner": "KIA", "a_pick": "kia", "tape_pick": "NJ", "is_guest": "1"})
+    client.post("/drops/new", data={"item": "x1", "member": "KIA", "sale_price": "10"})
+    client.post("/drops/new", data={"item": "x2", "member": "kia", "sale_price": "5"})
+    db = connect(app)
+    rows = db.execute("SELECT partner, a_pick, b_pick, c_pick, tape_pick FROM runs ORDER BY id").fetchall()
+    assert [r["partner"] for r in rows] == ["eric", "eric", "KIA"]
+    assert rows[0]["a_pick"] == "eric" and rows[1]["a_pick"] == "eric" and rows[2]["a_pick"] == "KIA"
+    assert {p["name"].lower(): p["total_picks"] for p in build_people(db)} == {"nj": 3, "eric": 2, "kia": 1}
+    payouts = {p["name"].lower(): p["unpaid_sum"] for p in build_payouts(db, 100)}
+    assert payouts == {"kia": 15.0}
