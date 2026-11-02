@@ -132,6 +132,8 @@ def read_run_form(db, form):
         errors.append("勾選陪打時，要填同行者名字")
     for field, label in SLOTS:
         pick = canon_name(db, form.get(field))
+        if partner and pick.lower() == partner.lower():
+            pick = partner  # 得主與同行者同一人：統一用同行者的寫法（新名字還沒存進資料庫時也適用）
         data[field] = pick
         if pick and pick.lower() != ME.lower() and (not partner or pick.lower() != partner.lower()):
             errors.append(f"{label} 的得主「{pick}」不是 NJ，也不是本場的同行者")
