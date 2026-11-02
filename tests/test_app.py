@@ -422,3 +422,21 @@ def test_discord_requires_fixed_secret_key(tmp_path, monkeypatch):
     monkeypatch.delenv("RMS_SECRET_KEY")
     with pytest.raises(RuntimeError):
         create_app(tmp_path / "nokey.db")
+
+
+def test_discord_http_error_shows_discord_reason(discord_app, monkeypatch):
+    import app as app_module
+    import io
+    import urllib.error
+
+    def fail(code, cfg):
+        raise urllib.error.HTTPError("https://discord.com/api/oauth2/token", 401, "Unauthorized", {},
+                                     io.BytesIO(b'{"error": "invalid_client", "error_description": "invalid client"}'))
+    monkeypatch.setattr(app_module, "discord_exchange_code", fail)
+    client = discord_app.test_client()
+    state, _ = _login_state(client)
+    resp = client.get(f"/auth/discord/callback?code=abc&state={state}")
+    assert resp.status_code == 502
+    body = resp.get_data(as_text=True)
+    assert "invalid_client" in body and "HTTP 401" in body
+    assert "fixed-test-key" not in body and "shh" not in body
