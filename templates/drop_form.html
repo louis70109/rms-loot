@@ -29,6 +29,11 @@
       已付給持有人（原表 paid 打 v）
     </label>
   </div>
+  <div class="grid2">
+    <label>付款日
+      <input type="date" name="paid_date" value="{{ data.paid_date }}">
+    </label>
+  </div>
   <datalist id="names">
     {% for n in names %}<option value="{{ n }}"></option>{% endfor %}
   </datalist>
