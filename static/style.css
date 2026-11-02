@@ -95,6 +95,13 @@ tr.row-paid td { color: var(--muted); background: var(--paid-bg); }
 .pill.unpaid { border-color: var(--danger); color: var(--danger); }
 
 .actions { white-space: nowrap; }
+input.cell { width: auto; min-width: 70px; padding: 4px 6px; font-size: 14px; background: transparent; border-color: transparent; }
+input.cell:hover, input.cell:focus { border-color: var(--line); background: var(--bg); }
+input.cell.narrow { width: 96px; }
+input.cell.num-in { width: 80px; text-align: right; }
+input.cell:not(.narrow):not(.num-in) { min-width: 160px; }
+td.center { text-align: center; }
+td.center input[type="checkbox"] { width: 18px; height: 18px; }
 .actions a { margin-right: 12px; }
 .actions form { display: inline; }
 
