@@ -31,5 +31,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Ensure fly app and volume exist
+        env:
+          FLY_ORG: ${{ vars.FLY_ORG }}
+        run: |
+          if ! flyctl status -a rms-loot-nj >/dev/null 2>&1; then
+            flyctl apps create rms-loot-nj --org "${FLY_ORG:-personal}"
+          fi
+          if ! flyctl volumes list -a rms-loot-nj 2>/dev/null | grep -q rms_data; then
+            flyctl volumes create rms_data --region nrt --size 1 -a rms-loot-nj -y
+          fi
       - name: Deploy to fly.io
         run: flyctl deploy --remote-only -a rms-loot-nj
