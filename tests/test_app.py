@@ -440,3 +440,34 @@ def test_discord_http_error_shows_discord_reason(discord_app, monkeypatch):
     body = resp.get_data(as_text=True)
     assert "invalid_client" in body and "HTTP 401" in body
     assert "fixed-test-key" not in body and "shh" not in body
+
+
+def test_discord_requests_send_a_user_agent(monkeypatch):
+    import app as app_module
+    seen = []
+
+    class FakeResp:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self):
+            return self.payload
+
+    def fake_urlopen(req, timeout=None):
+        seen.append(req.get_header("User-agent"))
+        if req.full_url == app_module.DISCORD_TOKEN_URL:
+            return FakeResp(b'{"access_token": "tok"}')
+        return FakeResp(b'{"id": "42"}')
+
+    monkeypatch.setattr(app_module.urllib.request, "urlopen", fake_urlopen)
+    cfg = {"DISCORD_CLIENT_ID": "1", "DISCORD_CLIENT_SECRET": "s", "DISCORD_REDIRECT_URI": "https://x/cb"}
+    token = app_module.discord_exchange_code("code", cfg)
+    assert app_module.discord_fetch_user_id(token) == "42"
+    assert seen == [app_module.DISCORD_USER_AGENT, app_module.DISCORD_USER_AGENT]
+    assert not app_module.DISCORD_USER_AGENT.startswith("Python-urllib")
