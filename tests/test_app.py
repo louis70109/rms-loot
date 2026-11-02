@@ -471,3 +471,11 @@ def test_discord_requests_send_a_user_agent(monkeypatch):
     assert app_module.discord_fetch_user_id(token) == "42"
     assert seen == [app_module.DISCORD_USER_AGENT, app_module.DISCORD_USER_AGENT]
     assert not app_module.DISCORD_USER_AGENT.startswith("Python-urllib")
+
+
+def test_logout_button_shows_when_logged_in(discord_app, monkeypatch):
+    client = _log_in_as(discord_app, monkeypatch, OWNER)
+    page = client.get("/").get_data(as_text=True)
+    assert "/auth/logout" in page and "登出" in page
+    anon = discord_app.test_client().get("/auth/discord/login")
+    assert anon.status_code == 302  # 未登入時不會顯示登出（登入頁本身不渲染導覽列）

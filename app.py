@@ -469,6 +469,11 @@ def create_app(db_path=None):
         app.config["SESSION_COOKIE_SECURE"] = True
         app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.jinja_env.globals["SLOTS"] = SLOTS
+
+    @app.context_processor
+    def inject_auth():
+        """導覽列用：目前登入的身分（沒有 Discord 登入時為空）。"""
+        return {"auth_name": session.get("name", ""), "auth_role": session.get("role", "")}
     app.jinja_env.filters["money"] = lambda v: "" if v is None else f"{v:g}"
 
     # 密碼閘門：設了 APP_PASSWORD 就要 HTTP Basic 登入（帳號隨意，只驗密碼）。
