@@ -14,7 +14,7 @@
     <thead>
       <tr>
         <th>#</th><th>掉落物</th><th>持有人</th>
-        <th>市價</th><th>賣出價</th><th>賣出日</th><th>付款狀態</th><th></th>
+        <th>市價</th><th>賣出價</th><th>賣出日</th><th>付款狀態</th><th>付款日</th><th></th>
       </tr>
     </thead>
     <tbody>
@@ -37,6 +37,7 @@
             <input type="checkbox" name="paid" value="1" {% if d.paid %}checked{% endif %} form="{{ f }}">
             <span class="status {{ st }}">{% if st == 'paid' %}✅ 已付{% elif st == 'incomplete' %}⚠️ 未完成{% else %}⏳ 未付{% endif %}</span>
           </td>
+          <td><input class="cell narrow" type="date" name="paid_date" value="{{ d.paid_date }}" form="{{ f }}"></td>
           <td class="actions">
             <form method="post" action="{{ url_for('drop_delete', drop_id=d.id) }}" onsubmit="return confirm('確定刪除「{{ d.item }}」？')">
               <button class="link danger">刪除</button>
@@ -44,7 +45,7 @@
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="8" class="muted">還沒有掉落物。</td></tr>
+        <tr><td colspan="9" class="muted">還沒有掉落物。</td></tr>
       {% endfor %}
     </tbody>
   </table>

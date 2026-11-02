@@ -248,3 +248,46 @@ def test_drops_page_shows_payment_status_icons(app):
     client.post("/drops/new", data={"item": "C", "member": "KIA"})  # 沒有賣出價 → 未完成
     page = client.get("/drops").get_data(as_text=True)
     assert "⏳ 未付" in page and "✅ 已付" in page and "⚠️ 未完成" in page
+
+
+def test_one_click_pay_marks_paid_and_records_amount(loaded, app):
+    db = connect(app)
+    unpaid_ids = [r["id"] for r in db.execute(
+        "SELECT id FROM drops WHERE lower(member) = 'kia' AND paid = 0 AND sale_price IS NOT NULL")]
+    assert len(unpaid_ids) == 5
+    client = app.test_client()
+    resp = client.post("/payouts/pay", data={"member": "KIA", "paid_date": "2026-11-02"})
+    assert resp.status_code == 302
+    rows = db.execute(f"SELECT id, paid, paid_date FROM drops WHERE id IN ({','.join('?' * len(unpaid_ids))})",
+                      unpaid_ids).fetchall()
+    assert all(r["paid"] == 1 and r["paid_date"] == "2026-11-02" for r in rows)
+    # 沒有賣出價的 EP 11211 不會被付款
+    assert db.execute("SELECT paid FROM drops WHERE item = 'EP 11211'").fetchone()["paid"] == 0
+    pay = db.execute("SELECT * FROM payments").fetchone()
+    assert (pay["member"], pay["paid_date"], pay["amount"], pay["item_count"]) == ("KIA", "2026-11-02", 108.64, 5)
+    assert pay["formula"] == "224 × 97% × 50% = 108.64"
+    kia_after = {p["name"].lower(): p for p in build_payouts(db, 3, 50)}["kia"]
+    assert kia_after["unpaid_sum"] == 0 and kia_after["payout"] == 0
+
+
+def test_pay_with_nothing_to_pay_records_nothing(loaded, app):
+    client = app.test_client()
+    client.post("/payouts/pay", data={"member": "ERIC", "paid_date": "2026-11-02"})
+    db = connect(app)
+    assert db.execute("SELECT COUNT(*) FROM payments").fetchone()[0] == 0
+
+
+def test_migration_adds_paid_date_to_old_database(tmp_path):
+    import sqlite3 as sq
+    path = tmp_path / "old.db"
+    old = sq.connect(path)
+    old.executescript("""CREATE TABLE drops (id INTEGER PRIMARY KEY AUTOINCREMENT, item TEXT NOT NULL,
+        member TEXT NOT NULL, market_price REAL, sale_price REAL, sold_date TEXT NOT NULL DEFAULT '',
+        paid INTEGER NOT NULL DEFAULT 0);
+        INSERT INTO drops (item, member, sale_price) VALUES ('old', 'KIA', 10);""")
+    old.commit(); old.close()
+    app = create_app(path)
+    db = connect(app)
+    cols = {r[1] for r in db.execute("PRAGMA table_info(drops)")}
+    assert "paid_date" in cols
+    assert db.execute("SELECT item, paid_date FROM drops").fetchone()["paid_date"] == ""

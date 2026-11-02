@@ -74,14 +74,43 @@
       </thead>
       <tbody>
         {% for p in payouts %}
-          <tr>
+          {% set has = p.sold_items or p.incomplete_items %}
+          <tr class="payout-row {{ 'has-detail' if has else '' }}" data-detail="pd-{{ loop.index }}">
             <td><strong>{{ p.name }}</strong></td>
             <td>{{ p.unpaid_items }}</td>
             <td class="num">{{ "%.2f"|format(p.unpaid_sum) }}</td>
-            <td class="num {{ 'due' if p.payout > 0 else '' }}">{{ "%.2f"|format(p.payout) }}</td>
+            <td class="num due-cell {{ 'due' if p.payout > 0 else '' }}">
+              {{ "%.2f"|format(p.payout) }}{% if has %} <span class="caret">▸</span>{% endif %}
+            </td>
             <td>{{ p.incomplete or "" }}</td>
             <td>{{ p.paid_items }}</td>
           </tr>
+          {% if has %}
+          <tr id="pd-{{ loop.index }}" class="detail-row" hidden>
+            <td colspan="6">
+              <table class="detail-table">
+                <thead><tr><th>物品</th><th class="num">賣出價</th><th>賣出日</th></tr></thead>
+                <tbody>
+                  {% for it in p.sold_items %}
+                    <tr><td>{{ it.item }}</td><td class="num">{{ it.sale_price|money }}</td><td>{{ it.sold_date }}</td></tr>
+                  {% endfor %}
+                  <tr class="total"><td><strong>未付合計（{{ p.unpaid_items }} 件）</strong></td><td class="num"><strong>{{ "%.2f"|format(p.unpaid_sum) }}</strong></td><td></td></tr>
+                </tbody>
+              </table>
+              <p class="formula">計算式：{{ p.formula }}</p>
+              <p class="formula-note">＝ 未付賣出價合計 × (1 − 手續費 {{ "%g"|format(fee) }}%) × 分配 {{ "%g"|format(share) }}%</p>
+              {% if p.incomplete_items %}
+                <p class="hint">未計入（缺賣出價）：{{ p.incomplete_items|join('、') }}</p>
+              {% endif %}
+              <form method="post" action="{{ url_for('payout_pay') }}" class="pay-form"
+                    onsubmit="return confirm('確定付給 {{ p.name }} {{ '%.2f'|format(p.payout) }}？會把 {{ p.sold_items|length }} 件標為已付。')">
+                <input type="hidden" name="member" value="{{ p.name }}">
+                <label>付款日 <input type="date" name="paid_date" value="{{ today }}"></label>
+                <button class="btn">一鍵付款：標記已付、寫入付款日、存下金額</button>
+              </form>
+            </td>
+          </tr>
+          {% endif %}
         {% else %}
           <tr><td colspan="6" class="muted">還沒有掉落物</td></tr>
         {% endfor %}
@@ -89,29 +118,39 @@
     </table>
   </div>
 </section>
+
 <section>
-  <h2>應付金額明細（點持有人展開，可直接截圖）</h2>
-  {% for p in payouts if p.sold_items or p.incomplete_items %}
-    <details class="payout-detail">
-      <summary><strong>{{ p.name }}</strong>　應付 {{ "%.2f"|format(p.payout) }}</summary>
-      <table class="detail-table">
-        <thead><tr><th>物品</th><th class="num">賣出價</th><th>賣出日</th></tr></thead>
-        <tbody>
-          {% for it in p.sold_items %}
-            <tr><td>{{ it.item }}</td><td class="num">{{ it.sale_price|money }}</td><td>{{ it.sold_date }}</td></tr>
-          {% endfor %}
-          <tr class="total"><td><strong>未付合計（{{ p.unpaid_items }} 件）</strong></td><td class="num"><strong>{{ "%.2f"|format(p.unpaid_sum) }}</strong></td><td></td></tr>
-        </tbody>
-      </table>
-      <p class="formula">計算式：{{ p.formula }}</p>
-      <p class="formula-note">＝ 未付賣出價合計 × (1 − 手續費 {{ "%g"|format(fee) }}%) × 分配 {{ "%g"|format(share) }}%</p>
-      {% if p.incomplete_items %}
-        <p class="hint">未計入（缺賣出價）：{{ p.incomplete_items|join('、') }}</p>
-      {% endif %}
-    </details>
-  {% else %}
-    <p class="muted">目前沒有未付項目。</p>
-  {% endfor %}
+  <h2>付款紀錄</h2>
+  <p class="hint">每按一次「一鍵付款」就會存一筆，金額和計算式是當下算好的，之後改價格也不會變。</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>付款日</th><th>持有人</th><th class="num">付款金額</th><th>件數</th><th>計算式</th><th>物品</th></tr></thead>
+      <tbody>
+        {% for pay in payments %}
+          <tr>
+            <td>{{ pay.paid_date }}</td>
+            <td><strong>{{ pay.member }}</strong></td>
+            <td class="num"><strong>{{ "%.2f"|format(pay.amount) }}</strong></td>
+            <td>{{ pay.item_count }}</td>
+            <td class="formula-cell">{{ pay.formula }}</td>
+            <td>{{ pay.item_names }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" class="muted">還沒有付款紀錄</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </section>
 
+<script>
+  document.querySelectorAll('tr.payout-row.has-detail').forEach(function (row) {
+    row.addEventListener('click', function () {
+      var d = document.getElementById(row.getAttribute('data-detail'));
+      if (!d) return;
+      d.hidden = !d.hidden;
+      row.classList.toggle('open', !d.hidden);
+    });
+  });
+</script>
 {% endblock %}

@@ -15,6 +15,7 @@ import math
 import os
 import secrets
 import sqlite3
+from datetime import date
 from pathlib import Path
 
 from flask import (Flask, Response, abort, flash, g, jsonify, redirect, render_template, request,
@@ -24,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent
 ME = "NJ"  # 分贓紀錄裡代表自己的名字
 SLOTS = (("a_pick", "A捲"), ("b_pick", "B捲"), ("c_pick", "C捲"), ("tape_pick", "tape"))
 RUN_COLS = ("run_date", "partner", "is_guest", "a_pick", "b_pick", "c_pick", "tape_pick", "note")
-DROP_COLS = ("item", "member", "market_price", "sale_price", "sold_date", "paid")
+DROP_COLS = ("item", "member", "market_price", "sale_price", "sold_date", "paid", "paid_date")
 TRUE_VALUES = {"v", "✓", "✔", "y", "yes", "true", "1", "已付"}
 
 # CSV 表頭（小寫比對）→ 內部欄位
@@ -54,7 +55,18 @@ CREATE TABLE IF NOT EXISTS drops (
     market_price REAL,
     sale_price REAL,
     sold_date TEXT NOT NULL DEFAULT '',
-    paid INTEGER NOT NULL DEFAULT 0
+    paid INTEGER NOT NULL DEFAULT 0,
+    paid_date TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    member TEXT NOT NULL,
+    paid_date TEXT NOT NULL,
+    amount REAL NOT NULL,
+    unpaid_sum REAL NOT NULL,
+    item_count INTEGER NOT NULL,
+    item_names TEXT NOT NULL,
+    formula TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
@@ -163,6 +175,7 @@ def read_drop_form(db, form):
         "sale_price": sale,
         "sold_date": clean(form.get("sold_date")),
         "paid": 1 if form.get("paid") else 0,
+        "paid_date": clean(form.get("paid_date")),
     }
     return data, errors
 
@@ -257,7 +270,8 @@ def build_payouts(db, fee_percent, share_percent):
         else:
             g_["unpaid_items"] += 1
             g_["unpaid_sum"] += d["sale_price"]
-            g_["sold_items"].append({"item": d["item"], "sale_price": d["sale_price"], "sold_date": d["sold_date"]})
+            g_["sold_items"].append({"id": d["id"], "item": d["item"], "sale_price": d["sale_price"],
+                                     "sold_date": d["sold_date"]})
 
     factor = (100 - fee_percent) / 100 * share_percent / 100
     result = sorted(groups.values(), key=lambda x: x["name"].lower())
@@ -419,6 +433,10 @@ def create_app(db_path=None):
 
     conn = sqlite3.connect(app.config["DB_PATH"])
     conn.executescript(SCHEMA)
+    # 舊資料庫補上 paid_date 欄位（CREATE TABLE IF NOT EXISTS 不會改既有的表）
+    if "paid_date" not in {r[1] for r in conn.execute("PRAGMA table_info(drops)")}:
+        conn.execute("ALTER TABLE drops ADD COLUMN paid_date TEXT NOT NULL DEFAULT ''")
+    conn.commit()
     conn.close()
 
     def get_db():
@@ -457,7 +475,32 @@ def create_app(db_path=None):
         db = get_db()
         fee, share = get_setting(db, "payout_fee_percent", 3.0), get_setting(db, "payout_share_percent", 50.0)
         return render_template("index.html", people=build_people(db), partners=build_partner_breakdown(db),
-                               payouts=build_payouts(db, fee, share), fee=fee, share=share)
+                               payouts=build_payouts(db, fee, share), fee=fee, share=share,
+                               payments=db.execute("SELECT * FROM payments ORDER BY id DESC").fetchall(),
+                               today=date.today().isoformat())
+
+    @app.post("/payouts/pay")
+    def payout_pay():
+        """一鍵付款：標記這位持有人所有可付項目為已付、寫入付款日，並存下當下的金額與計算式。"""
+        db = get_db()
+        member = clean(request.form.get("member"))
+        paid_date = clean(request.form.get("paid_date")) or date.today().isoformat()
+        fee, share = get_setting(db, "payout_fee_percent", 3.0), get_setting(db, "payout_share_percent", 50.0)
+        group = next((p for p in build_payouts(db, fee, share)
+                      if member and p["name"].lower() == member.lower()), None)
+        if group is None or not group["sold_items"]:
+            flash(f"{member or '這位持有人'} 沒有可付款的項目", "error")
+            return redirect(url_for("index"))
+        ids = [it["id"] for it in group["sold_items"]]
+        db.execute(f"UPDATE drops SET paid = 1, paid_date = ? WHERE id IN ({','.join('?' * len(ids))})",
+                   [paid_date, *ids])
+        db.execute("INSERT INTO payments (member, paid_date, amount, unpaid_sum, item_count, item_names, formula) "
+                   "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                   (group["name"], paid_date, group["payout"], group["unpaid_sum"], len(ids),
+                    "、".join(it["item"] for it in group["sold_items"]), group["formula"]))
+        db.commit()
+        flash(f"已付給 {group['name']} {group['payout']:.2f}（{len(ids)} 件），付款日 {paid_date}", "ok")
+        return redirect(url_for("index"))
 
     # 分贓紀錄
     @app.get("/runs")
