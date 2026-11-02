@@ -54,18 +54,20 @@ def test_people_stats_match_sheet(loaded):
 
 
 def test_payouts_merge_case_and_sum_unpaid(loaded):
-    payouts = {p["name"].lower(): p for p in build_payouts(loaded, 100)}
+    payouts = {p["name"].lower(): p for p in build_payouts(loaded, 0, 100)}
     assert len(payouts) == 2                           # eric / Eric / ERIC 合併
-    assert payouts["kia"]["unpaid_items"] == 5
-    assert payouts["kia"]["unpaid_sum"] == 224         # 70+35+19+65+35
-    assert payouts["kia"]["unpriced"] == 1             # EP 11211 沒填賣出價
+    assert payouts["kia"]["unpaid_items"] == 4         # 只計已賣出且未付：17~20
+    assert payouts["kia"]["unpaid_sum"] == 154         # 35+19+65+35
+    assert payouts["kia"]["incomplete"] == 2           # D13 缺賣出日、EP 11211 缺賣出價
     assert payouts["eric"]["unpaid_sum"] == 0
     assert payouts["eric"]["paid_items"] == 11
 
 
-def test_payout_percent_applied(loaded):
-    payouts = {p["name"].lower(): p for p in build_payouts(loaded, 50)}
-    assert payouts["kia"]["payout"] == 112
+def test_payout_formula_matches_sheet_g20(loaded):
+    # 原表 G20 = 74.69 = 154 × 0.97 ÷ 2（扣 3% 手續費，再對半分）
+    payouts = {p["name"].lower(): p for p in build_payouts(loaded, 3, 50)}
+    assert payouts["kia"]["payout"] == 74.69
+    assert payouts["eric"]["payout"] == 0
 
 
 def test_import_is_all_or_nothing(app):
@@ -164,12 +166,12 @@ def test_names_case_insensitive_across_run_and_drops(app):
     client.post("/runs/new", data={"partner": "eric", "a_pick": "ERIC", "b_pick": "nj"})
     client.post("/runs/new", data={"partner": "Eric", "a_pick": "eric", "c_pick": "Nj"})
     client.post("/runs/new", data={"partner": "KIA", "a_pick": "kia", "tape_pick": "NJ", "is_guest": "1"})
-    client.post("/drops/new", data={"item": "x1", "member": "KIA", "sale_price": "10"})
-    client.post("/drops/new", data={"item": "x2", "member": "kia", "sale_price": "5"})
+    client.post("/drops/new", data={"item": "x1", "member": "KIA", "sale_price": "10", "sold_date": "1/1"})
+    client.post("/drops/new", data={"item": "x2", "member": "kia", "sale_price": "5", "sold_date": "1/2"})
     db = connect(app)
     rows = db.execute("SELECT partner, a_pick, b_pick, c_pick, tape_pick FROM runs ORDER BY id").fetchall()
     assert [r["partner"] for r in rows] == ["eric", "eric", "KIA"]
     assert rows[0]["a_pick"] == "eric" and rows[1]["a_pick"] == "eric" and rows[2]["a_pick"] == "KIA"
     assert {p["name"].lower(): p["total_picks"] for p in build_people(db)} == {"nj": 3, "eric": 2, "kia": 1}
-    payouts = {p["name"].lower(): p["unpaid_sum"] for p in build_payouts(db, 100)}
+    payouts = {p["name"].lower(): p["unpaid_sum"] for p in build_payouts(db, 0, 100)}
     assert payouts == {"kia": 15.0}
