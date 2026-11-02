@@ -429,6 +429,16 @@ def discord_exchange_code(code, config):
         return json.load(resp)["access_token"]
 
 
+def discord_error_detail(exc):
+    """Discord 的錯誤代碼與說明（不含任何 token 或 secret）。"""
+    try:
+        data = json.loads(exc.read().decode("utf-8", "replace"))
+        text = f"{data.get('error', '')} {data.get('error_description', '')}".strip()
+    except Exception:
+        text = ""
+    return (text or "無回應內容")[:200]
+
+
 def discord_fetch_user_id(access_token):
     req = urllib.request.Request(DISCORD_ME_URL, headers={"Authorization": f"Bearer {access_token}"})
     with urllib.request.urlopen(req, timeout=10) as resp:
@@ -522,8 +532,13 @@ def create_app(db_path=None):
         try:
             token = discord_exchange_code(request.args.get("code", ""), app.config)
             discord_id = discord_fetch_user_id(token)
-        except Exception:  # 網路或 Discord 端錯誤
-            return Response("無法向 Discord 取得資料，請稍後再試", 502)
+        except urllib.error.HTTPError as exc:  # Discord 回了錯誤（例如 invalid_client）
+            detail = discord_error_detail(exc)
+            app.logger.error("Discord HTTP %s: %s", exc.code, detail)
+            return Response(f"無法向 Discord 取得資料（HTTP {exc.code}：{detail}）", 502)
+        except Exception as exc:  # 網路等其他錯誤
+            app.logger.error("Discord login failed: %s", type(exc).__name__)
+            return Response(f"無法向 Discord 取得資料（{type(exc).__name__}），請稍後再試", 502)
         session.clear()
         session["discord_id"] = discord_id
         if discord_id in app.config["OWNER_DISCORD_IDS"]:
