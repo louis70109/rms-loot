@@ -156,3 +156,13 @@ legend { color: var(--muted); font-size: 14px; padding: 0 6px; }
 tr.has-error td { background: rgba(214, 69, 61, .10); }
 .add-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; }
 .add-row .hint { margin: 0; }
+
+.paid-cell { white-space: nowrap; }
+.paid-cell input[type="checkbox"] { width: 18px; height: 18px; vertical-align: middle; margin-right: 6px; }
+.status {
+  display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px;
+  border: 1px solid var(--line); vertical-align: middle;
+}
+.status.paid { border-color: var(--ok); color: var(--ok); }
+.status.unpaid { border-color: var(--danger); color: var(--danger); }
+.status.incomplete { border-color: var(--warn-text); color: var(--warn-text); background: var(--warn-bg); }
