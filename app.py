@@ -441,8 +441,9 @@ def create_app(db_path=None):
     # 分贓紀錄
     @app.get("/runs")
     def runs():
-        rows = get_db().execute("SELECT * FROM runs ORDER BY id").fetchall()
-        return render_template("runs.html", runs=rows)
+        db = get_db()
+        rows = db.execute("SELECT * FROM runs ORDER BY id").fetchall()
+        return render_template("runs.html", runs=rows, names=known_names(db))
 
     @app.route("/runs/new", methods=["GET", "POST"])
     def run_new():
@@ -467,6 +468,10 @@ def create_app(db_path=None):
         data, errors = dict(row), []
         if request.method == "POST":
             data, errors = read_run_form(db, request.form)
+            if errors and request.form.get("inline"):  # 表格上直接改：錯誤回到列表頁顯示
+                for e in errors:
+                    flash(f"第 {run_id} 場：{e}", "error")
+                return redirect(url_for("runs"))
             if not errors:
                 save_run(db, data, run_id)
                 db.commit()
@@ -486,8 +491,9 @@ def create_app(db_path=None):
     # 掉落物
     @app.get("/drops")
     def drops():
-        rows = get_db().execute("SELECT * FROM drops ORDER BY id").fetchall()
-        return render_template("drops.html", drops=rows)
+        db = get_db()
+        rows = db.execute("SELECT * FROM drops ORDER BY id").fetchall()
+        return render_template("drops.html", drops=rows, names=known_names(db))
 
     @app.route("/drops/new", methods=["GET", "POST"])
     def drop_new():
@@ -513,6 +519,10 @@ def create_app(db_path=None):
         data, errors = dict(row), []
         if request.method == "POST":
             data, errors = read_drop_form(db, request.form)
+            if errors and request.form.get("inline"):  # 表格上直接改：錯誤回到列表頁顯示
+                for e in errors:
+                    flash(f"掉落物 #{drop_id}：{e}", "error")
+                return redirect(url_for("drops"))
             if not errors:
                 save_drop(db, data, drop_id)
                 db.commit()

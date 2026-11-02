@@ -5,34 +5,36 @@
   <h2>掉落物（{{ drops|length }} 件）</h2>
   <a class="btn" href="{{ url_for('drop_new') }}">＋ 新增掉落物</a>
 </div>
+<p class="hint">直接在表格上改，離開該格就會自動儲存。</p>
+<datalist id="names">
+  {% for n in names %}<option value="{{ n }}"></option>{% endfor %}
+</datalist>
 <div class="table-wrap">
   <table>
     <thead>
       <tr>
         <th>#</th><th>掉落物</th><th>持有人</th>
-        <th>市價</th><th>賣出價</th><th>賣出日</th><th>付款</th><th></th>
+        <th>市價</th><th>賣出價</th><th>賣出日</th><th>已付</th><th></th>
       </tr>
     </thead>
     <tbody>
       {% for d in drops %}
+        {% set f = 'drop-' ~ d.id %}
         <tr class="{{ 'row-paid' if d.paid else '' }}">
-          <td class="muted">{{ d.id }}</td>
-          <td>{{ d.item }}</td>
-          <td>{{ d.member }}</td>
-          <td class="num">{{ d.market_price|money }}</td>
-          <td class="num">{{ d.sale_price|money }}{% if d.sale_price is none %}<span class="badge warn">未填</span>{% endif %}</td>
-          <td>{{ d.sold_date }}</td>
-          <td>
-            <form method="post" action="{{ url_for('drop_toggle', drop_id=d.id) }}">
-              <button class="pill {{ 'paid' if d.paid else 'unpaid' }}" title="點一下切換">
-                {{ '已付' if d.paid else '未付' }}
-              </button>
+          <td class="muted">
+            {{ d.id }}
+            <form id="{{ f }}" method="post" action="{{ url_for('drop_edit', drop_id=d.id) }}" hidden>
+              <input type="hidden" name="inline" value="1">
             </form>
           </td>
+          <td><input class="cell" name="item" value="{{ d.item }}" form="{{ f }}" onchange="this.form.requestSubmit()" required></td>
+          <td><input class="cell narrow" name="member" list="names" value="{{ d.member }}" form="{{ f }}" onchange="this.form.requestSubmit()" required></td>
+          <td><input class="cell num-in" name="market_price" inputmode="decimal" value="{{ d.market_price|money }}" form="{{ f }}" onchange="this.form.requestSubmit()"></td>
+          <td><input class="cell num-in" name="sale_price" inputmode="decimal" value="{{ d.sale_price|money }}" form="{{ f }}" onchange="this.form.requestSubmit()">{% if d.sale_price is none %}<span class="badge warn">未填</span>{% endif %}</td>
+          <td><input class="cell narrow" name="sold_date" value="{{ d.sold_date }}" placeholder="6/14" form="{{ f }}" onchange="this.form.requestSubmit()"></td>
+          <td class="center"><input type="checkbox" name="paid" value="1" {% if d.paid %}checked{% endif %} form="{{ f }}" onchange="this.form.requestSubmit()"></td>
           <td class="actions">
-            <a href="{{ url_for('drop_edit', drop_id=d.id) }}">編輯</a>
-            <form method="post" action="{{ url_for('drop_delete', drop_id=d.id) }}"
-                  onsubmit="return confirm('確定刪除「{{ d.item }}」？')">
+            <form method="post" action="{{ url_for('drop_delete', drop_id=d.id) }}" onsubmit="return confirm('確定刪除「{{ d.item }}」？')">
               <button class="link danger">刪除</button>
             </form>
           </td>
