@@ -24,5 +24,7 @@
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="{{ url_for('static', filename='table.js') }}" defer></script>
 </body>
 </html>

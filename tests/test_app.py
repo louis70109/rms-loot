@@ -177,24 +177,24 @@ def test_names_case_insensitive_across_run_and_drops(app):
     assert payouts == {"kia": 15.0}
 
 
-def test_inline_drop_edit_saves_and_redirects(app):
+def test_inline_drop_edit_saves_and_returns_json(app):
     client = app.test_client()
     client.post("/drops/new", data={"item": "Eye", "member": "KIA", "sale_price": "10"})
     resp = client.post("/drops/1/edit", data={"inline": "1", "item": "Eye", "member": "KIA",
                                               "sale_price": "12", "sold_date": "6/14", "paid": "1"})
-    assert resp.status_code == 302 and resp.headers["Location"].endswith("/drops")
+    assert resp.status_code == 200 and resp.get_json() == {"ok": True}
     db = connect(app)
     row = db.execute("SELECT sale_price, sold_date, paid FROM drops WHERE id = 1").fetchone()
     assert (row["sale_price"], row["sold_date"], row["paid"]) == (12.0, "6/14", 1)
 
 
-def test_inline_edit_error_does_not_save_and_returns_to_list(app):
+def test_inline_edit_error_does_not_save_and_returns_422(app):
     client = app.test_client()
     client.post("/runs/new", data={"partner": "ERIC", "a_pick": "NJ"})
     resp = client.post("/runs/1/edit", data={"inline": "1", "partner": "ERIC", "a_pick": "KIA"})
-    assert resp.status_code == 302 and resp.headers["Location"].endswith("/runs")
+    assert resp.status_code == 422
+    assert any("不是 NJ" in e for e in resp.get_json()["errors"])
     db = connect(app)
     assert db.execute("SELECT a_pick FROM runs WHERE id = 1").fetchone()["a_pick"] == "NJ"
-    page = client.get("/runs").get_data(as_text=True)
-    assert "不是 NJ" in page  # 錯誤訊息顯示在列表頁
-    assert 'form="run-1"' in page  # 表格格子直接綁定到該列的表單
+
+

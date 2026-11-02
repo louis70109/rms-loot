@@ -17,7 +17,7 @@ import secrets
 import sqlite3
 from pathlib import Path
 
-from flask import (Flask, Response, abort, flash, g, redirect, render_template, request,
+from flask import (Flask, Response, abort, flash, g, jsonify, redirect, render_template, request,
                    url_for)
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -468,10 +468,12 @@ def create_app(db_path=None):
         data, errors = dict(row), []
         if request.method == "POST":
             data, errors = read_run_form(db, request.form)
-            if errors and request.form.get("inline"):  # 表格上直接改：錯誤回到列表頁顯示
-                for e in errors:
-                    flash(f"第 {run_id} 場：{e}", "error")
-                return redirect(url_for("runs"))
+            if request.form.get("inline"):  # 表格背景儲存：回 JSON，不跳頁
+                if errors:
+                    return jsonify(ok=False, errors=errors), 422
+                save_run(db, data, run_id)
+                db.commit()
+                return jsonify(ok=True)
             if not errors:
                 save_run(db, data, run_id)
                 db.commit()
@@ -519,10 +521,12 @@ def create_app(db_path=None):
         data, errors = dict(row), []
         if request.method == "POST":
             data, errors = read_drop_form(db, request.form)
-            if errors and request.form.get("inline"):  # 表格上直接改：錯誤回到列表頁顯示
-                for e in errors:
-                    flash(f"掉落物 #{drop_id}：{e}", "error")
-                return redirect(url_for("drops"))
+            if request.form.get("inline"):  # 表格背景儲存：回 JSON，不跳頁
+                if errors:
+                    return jsonify(ok=False, errors=errors), 422
+                save_drop(db, data, drop_id)
+                db.commit()
+                return jsonify(ok=True)
             if not errors:
                 save_drop(db, data, drop_id)
                 db.commit()

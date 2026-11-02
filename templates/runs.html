@@ -5,13 +5,13 @@
   <h2>分贓紀錄（{{ runs|length }} 場）</h2>
   <a class="btn" href="{{ url_for('run_new') }}">＋ 新增一場</a>
 </div>
-<p class="hint">直接在表格上改，離開該格就會自動儲存。得主填 NJ 或同行者名字，留空 = 這捲沒掉。</p>
+<p class="hint">直接在表格上改。Enter / ↓ 往下、Shift+Enter / ↑ 往上，離開格子即自動儲存；Ctrl+D 把這一列換成上一列的內容。得主填 NJ 或同行者名字，留空 = 這捲沒掉。</p>
 <datalist id="names">
   <option value="NJ"></option>
   {% for n in names %}<option value="{{ n }}"></option>{% endfor %}
 </datalist>
 <div class="table-wrap">
-  <table>
+  <table class="grid">
     <thead>
       <tr>
         <th>#</th><th>日期</th><th>同行者</th><th>陪打</th>
@@ -29,13 +29,13 @@
               <input type="hidden" name="inline" value="1">
             </form>
           </td>
-          <td><input class="cell narrow" name="run_date" value="{{ r.run_date }}" placeholder="7/19" form="{{ f }}" onchange="this.form.requestSubmit()"></td>
-          <td><input class="cell narrow" name="partner" list="names" value="{{ r.partner }}" form="{{ f }}" onchange="this.form.requestSubmit()"></td>
-          <td class="center"><input type="checkbox" name="is_guest" value="1" {% if r.is_guest %}checked{% endif %} form="{{ f }}" onchange="this.form.requestSubmit()"></td>
+          <td><input class="cell narrow" name="run_date" value="{{ r.run_date }}" placeholder="7/19" form="{{ f }}"></td>
+          <td><input class="cell narrow" name="partner" list="names" value="{{ r.partner }}" form="{{ f }}"></td>
+          <td class="center"><input type="checkbox" name="is_guest" value="1" {% if r.is_guest %}checked{% endif %} form="{{ f }}"></td>
           {% for field, _ in SLOTS %}
-            <td><input class="cell narrow" name="{{ field }}" list="names" value="{{ r[field] }}" form="{{ f }}" onchange="this.form.requestSubmit()"></td>
+            <td><input class="cell narrow" name="{{ field }}" list="names" value="{{ r[field] }}" form="{{ f }}"></td>
           {% endfor %}
-          <td><input class="cell" name="note" value="{{ r.note }}" form="{{ f }}" onchange="this.form.requestSubmit()"></td>
+          <td><input class="cell" name="note" value="{{ r.note }}" form="{{ f }}"></td>
           <td class="actions">
             <form method="post" action="{{ url_for('run_delete', run_id=r.id) }}" onsubmit="return confirm('確定刪除第 {{ r.id }} 場？')">
               <button class="link danger">刪除</button>

@@ -5,12 +5,12 @@
   <h2>掉落物（{{ drops|length }} 件）</h2>
   <a class="btn" href="{{ url_for('drop_new') }}">＋ 新增掉落物</a>
 </div>
-<p class="hint">直接在表格上改，離開該格就會自動儲存。</p>
+<p class="hint">直接在表格上改。Enter / ↓ 往下、Shift+Enter / ↑ 往上，離開格子即自動儲存；Ctrl+D 把這一列換成上一列的內容。</p>
 <datalist id="names">
   {% for n in names %}<option value="{{ n }}"></option>{% endfor %}
 </datalist>
 <div class="table-wrap">
-  <table>
+  <table class="grid">
     <thead>
       <tr>
         <th>#</th><th>掉落物</th><th>持有人</th>
@@ -27,12 +27,12 @@
               <input type="hidden" name="inline" value="1">
             </form>
           </td>
-          <td><input class="cell" name="item" value="{{ d.item }}" form="{{ f }}" onchange="this.form.requestSubmit()" required></td>
-          <td><input class="cell narrow" name="member" list="names" value="{{ d.member }}" form="{{ f }}" onchange="this.form.requestSubmit()" required></td>
-          <td><input class="cell num-in" name="market_price" inputmode="decimal" value="{{ d.market_price|money }}" form="{{ f }}" onchange="this.form.requestSubmit()"></td>
-          <td><input class="cell num-in" name="sale_price" inputmode="decimal" value="{{ d.sale_price|money }}" form="{{ f }}" onchange="this.form.requestSubmit()">{% if d.sale_price is none %}<span class="badge warn">未填</span>{% endif %}</td>
-          <td><input class="cell narrow" name="sold_date" value="{{ d.sold_date }}" placeholder="6/14" form="{{ f }}" onchange="this.form.requestSubmit()"></td>
-          <td class="center"><input type="checkbox" name="paid" value="1" {% if d.paid %}checked{% endif %} form="{{ f }}" onchange="this.form.requestSubmit()"></td>
+          <td><input class="cell" name="item" value="{{ d.item }}" form="{{ f }}" required></td>
+          <td><input class="cell narrow" name="member" list="names" value="{{ d.member }}" form="{{ f }}" required></td>
+          <td><input class="cell num-in" name="market_price" inputmode="decimal" value="{{ d.market_price|money }}" form="{{ f }}"></td>
+          <td><input class="cell num-in" name="sale_price" inputmode="decimal" value="{{ d.sale_price|money }}" form="{{ f }}">{% if d.sale_price is none %}<span class="badge warn">未填</span>{% endif %}</td>
+          <td><input class="cell narrow" name="sold_date" value="{{ d.sold_date }}" placeholder="6/14" form="{{ f }}"></td>
+          <td class="center"><input type="checkbox" name="paid" value="1" {% if d.paid %}checked{% endif %} form="{{ f }}"></td>
           <td class="actions">
             <form method="post" action="{{ url_for('drop_delete', drop_id=d.id) }}" onsubmit="return confirm('確定刪除「{{ d.item }}」？')">
               <button class="link danger">刪除</button>
