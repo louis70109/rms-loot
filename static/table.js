@@ -58,12 +58,33 @@
       if (d.type === 'checkbox') d.checked = s.checked;
       else d.value = s.value;
     }
+    refreshStatus(tr);
     if (dsts[0]) save(dsts[0]);
+  }
+
+  // 付款狀態標籤：已付 / 未付 / 未完成（缺賣出價或賣出日），跟著格子內容即時更新
+  function refreshStatus(tr) {
+    const badge = tr.querySelector('.status');
+    if (!badge) return;
+    const paid = tr.querySelector('input[name="paid"]');
+    const isPaid = !!(paid && paid.checked);
+    const sale = (tr.querySelector('input[name="sale_price"]') || {}).value || '';
+    const sold = (tr.querySelector('input[name="sold_date"]') || {}).value || '';
+    let kind, text;
+    if (isPaid) { kind = 'paid'; text = '✅ 已付'; }
+    else if (!sale.trim() || !sold.trim()) { kind = 'incomplete'; text = '⚠️ 未完成'; }
+    else { kind = 'unpaid'; text = '⏳ 未付'; }
+    badge.className = 'status ' + kind;
+    badge.textContent = text;
+    tr.classList.toggle('row-paid', isPaid);
   }
 
   table.addEventListener('change', (e) => {
     const el = e.target;
-    if (el instanceof HTMLInputElement && el.form && el.name) save(el);
+    if (el instanceof HTMLInputElement && el.form && el.name) {
+      refreshStatus(el.closest('tr'));
+      save(el);
+    }
   });
 
   table.addEventListener('keydown', (e) => {

@@ -215,3 +215,12 @@ def test_copy_last_run_with_no_runs_opens_blank_form(app):
     client = app.test_client()
     resp = client.post("/runs/copy-last")
     assert resp.status_code == 302 and resp.headers["Location"].endswith("/runs/new")
+
+
+def test_drops_page_shows_payment_status_icons(app):
+    client = app.test_client()
+    client.post("/drops/new", data={"item": "A", "member": "KIA", "sale_price": "10", "sold_date": "1/1"})
+    client.post("/drops/new", data={"item": "B", "member": "KIA", "sale_price": "10", "sold_date": "1/1", "paid": "1"})
+    client.post("/drops/new", data={"item": "C", "member": "KIA", "sale_price": "10"})
+    page = client.get("/drops").get_data(as_text=True)
+    assert "⏳ 未付" in page and "✅ 已付" in page and "⚠️ 未完成" in page
