@@ -220,6 +220,23 @@ def build_people(db):
     return result
 
 
+def build_partner_breakdown(db):
+    """每位同行者底下：這些場次中 NJ 拿到的各捲次數（沒有同行者的場次另列）。"""
+    groups = {}
+    for r in db.execute("SELECT * FROM runs ORDER BY id").fetchall():
+        name = r["partner"] or "（沒有同行者）"
+        key = name.lower()
+        g_ = groups.setdefault(key, {"name": name, "runs": 0, "guest_runs": 0,
+                                     "picks": {f: 0 for f, _ in SLOTS}, "total": 0})
+        g_["runs"] += 1
+        g_["guest_runs"] += r["is_guest"] if r["partner"] else 0
+        for field, _ in SLOTS:
+            if r[field].lower() == ME.lower():
+                g_["picks"][field] += 1
+                g_["total"] += 1
+    return sorted(groups.values(), key=lambda x: (x["name"].startswith("（"), x["name"].lower()))
+
+
 def build_payouts(db, fee_percent, share_percent):
     """每位持有人（不分大小寫合併）的應付金額，對應原表 G 欄。
 
@@ -435,7 +452,7 @@ def create_app(db_path=None):
     def index():
         db = get_db()
         fee, share = get_setting(db, "payout_fee_percent", 3.0), get_setting(db, "payout_share_percent", 50.0)
-        return render_template("index.html", people=build_people(db),
+        return render_template("index.html", people=build_people(db), partners=build_partner_breakdown(db),
                                payouts=build_payouts(db, fee, share), fee=fee, share=share)
 
     # 分贓紀錄
