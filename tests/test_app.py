@@ -56,17 +56,17 @@ def test_people_stats_match_sheet(loaded):
 def test_payouts_merge_case_and_sum_unpaid(loaded):
     payouts = {p["name"].lower(): p for p in build_payouts(loaded, 0, 100)}
     assert len(payouts) == 2                           # eric / Eric / ERIC 合併
-    assert payouts["kia"]["unpaid_items"] == 4         # 只計已賣出且未付：17~20
-    assert payouts["kia"]["unpaid_sum"] == 154         # 35+19+65+35
-    assert payouts["kia"]["incomplete"] == 2           # D13 缺賣出日、EP 11211 缺賣出價
+    assert payouts["kia"]["unpaid_items"] == 5         # 所有未付且有賣出價：13、17~20
+    assert payouts["kia"]["unpaid_sum"] == 224         # 70+35+19+65+35
+    assert payouts["kia"]["incomplete"] == 1           # EP 11211 沒有賣出價，不計金額
     assert payouts["eric"]["unpaid_sum"] == 0
     assert payouts["eric"]["paid_items"] == 11
 
 
-def test_payout_formula_matches_sheet_g20(loaded):
-    # 原表 G20 = 74.69 = 154 × 0.97 ÷ 2（扣 3% 手續費，再對半分）
+def test_payout_formula_all_unpaid(loaded):
+    # 所有未付（有賣出價）都算：224 × 0.97 ÷ 2 = 108.64
     payouts = {p["name"].lower(): p for p in build_payouts(loaded, 3, 50)}
-    assert payouts["kia"]["payout"] == 74.69
+    assert payouts["kia"]["payout"] == 108.64
     assert payouts["eric"]["payout"] == 0
 
 
@@ -220,14 +220,15 @@ def test_copy_last_run_with_no_runs_opens_blank_form(app):
 def test_payout_details_list_items_and_formula(loaded, app):
     payouts = {p["name"].lower(): p for p in build_payouts(loaded, 3, 50)}
     kia = payouts["kia"]
-    assert kia["formula"] == "154 × 97% × 50% = 74.69"
-    assert [i["item"] for i in kia["sold_items"]] == ["shield MA 60%", "face for DEX 60%",
-                                                 "face for INT 60%", "Eye for LKUK 60%"]
-    assert kia["incomplete_items"] == ["Eye for DEX 60%", "EP 11211"]
+    assert kia["formula"] == "224 × 97% × 50% = 108.64"
+    assert [i["item"] for i in kia["sold_items"]] == ["Eye for DEX 60%", "shield MA 60%",
+                                                 "face for DEX 60%", "face for INT 60%",
+                                                 "Eye for LKUK 60%"]
+    assert kia["incomplete_items"] == ["EP 11211"]
     page = app.test_client().get("/").get_data(as_text=True)
     assert "計算式：KIA" not in page
-    assert "154 × 97% × 50% = 74.69" in page
-    assert "shield MA 60%" in page and "未計入（缺賣出價或賣出日）" in page
+    assert "224 × 97% × 50% = 108.64" in page
+    assert "shield MA 60%" in page and "未計入（缺賣出價）" in page
 
 def test_partner_breakdown_matches_sheet(loaded):
     from app import build_partner_breakdown
@@ -244,6 +245,6 @@ def test_drops_page_shows_payment_status_icons(app):
     client = app.test_client()
     client.post("/drops/new", data={"item": "A", "member": "KIA", "sale_price": "10", "sold_date": "1/1"})
     client.post("/drops/new", data={"item": "B", "member": "KIA", "sale_price": "10", "sold_date": "1/1", "paid": "1"})
-    client.post("/drops/new", data={"item": "C", "member": "KIA", "sale_price": "10"})
+    client.post("/drops/new", data={"item": "C", "member": "KIA"})  # 沒有賣出價 → 未完成
     page = client.get("/drops").get_data(as_text=True)
     assert "⏳ 未付" in page and "✅ 已付" in page and "⚠️ 未完成" in page

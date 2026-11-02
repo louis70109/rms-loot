@@ -72,7 +72,7 @@
     const sold = (tr.querySelector('input[name="sold_date"]') || {}).value || '';
     let kind, text;
     if (isPaid) { kind = 'paid'; text = '✅ 已付'; }
-    else if (!sale.trim() || !sold.trim()) { kind = 'incomplete'; text = '⚠️ 未完成'; }
+    else if (!sale.trim()) { kind = 'incomplete'; text = '⚠️ 未完成'; }
     else { kind = 'unpaid'; text = '⏳ 未付'; }
     badge.className = 'status ' + kind;
     badge.textContent = text;

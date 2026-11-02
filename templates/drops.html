@@ -32,7 +32,7 @@
           <td><input class="cell num-in" name="market_price" inputmode="decimal" value="{{ d.market_price|money }}" form="{{ f }}"></td>
           <td><input class="cell num-in" name="sale_price" inputmode="decimal" value="{{ d.sale_price|money }}" form="{{ f }}">{% if d.sale_price is none %}<span class="badge warn">未填</span>{% endif %}</td>
           <td><input class="cell narrow" name="sold_date" value="{{ d.sold_date }}" placeholder="6/14" form="{{ f }}"></td>
-          {% set st = 'paid' if d.paid else ('incomplete' if (d.sale_price is none or not d.sold_date) else 'unpaid') %}
+          {% set st = 'paid' if d.paid else ('incomplete' if d.sale_price is none else 'unpaid') %}
           <td class="paid-cell">
             <input type="checkbox" name="paid" value="1" {% if d.paid %}checked{% endif %} form="{{ f }}">
             <span class="status {{ st }}">{% if st == 'paid' %}✅ 已付{% elif st == 'incomplete' %}⚠️ 未完成{% else %}⏳ 未付{% endif %}</span>

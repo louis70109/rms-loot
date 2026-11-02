@@ -240,7 +240,7 @@ def build_partner_breakdown(db):
 def build_payouts(db, fee_percent, share_percent):
     """每位持有人（不分大小寫合併）的應付金額，對應原表 G 欄。
 
-    只計入「已賣出（有賣出價與賣出日）且未付」的項目；
+    只要未付且有賣出價就計入；缺賣出價的列為未完成，不計金額。
     應付 = 未付賣出價合計 × (1 - 手續費%) × 分配比例%。
     例：154 × 0.97 ÷ 2 = 74.69。
     """
@@ -251,8 +251,8 @@ def build_payouts(db, fee_percent, share_percent):
             "unpaid_sum": 0.0, "incomplete": 0, "sold_items": [], "incomplete_items": []})
         if d["paid"]:
             g_["paid_items"] += 1
-        elif d["sale_price"] is None or not d["sold_date"]:
-            g_["incomplete"] += 1  # 還沒填賣出價或賣出日，先不計入
+        elif d["sale_price"] is None:
+            g_["incomplete"] += 1  # 還沒填賣出價，無法算金額
             g_["incomplete_items"].append(d["item"])
         else:
             g_["unpaid_items"] += 1
