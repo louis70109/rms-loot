@@ -215,3 +215,14 @@ def test_copy_last_run_with_no_runs_opens_blank_form(app):
     client = app.test_client()
     resp = client.post("/runs/copy-last")
     assert resp.status_code == 302 and resp.headers["Location"].endswith("/runs/new")
+
+
+def test_partner_breakdown_matches_sheet(loaded):
+    from app import build_partner_breakdown
+    rows = {p["name"]: p for p in build_partner_breakdown(loaded)}
+    assert rows["hangi"]["picks"]["tape_pick"] == 1       # 跟 hangi 打到 tape
+    assert rows["XL"]["picks"]["c_pick"] == 1             # 跟 XL 打到 C
+    assert rows["ERIC"]["total"] == 2                     # B、C
+    assert rows["KIA"]["total"] == 6 and rows["KIA"]["runs"] == 4
+    assert rows["（沒有同行者）"]["total"] == 8
+    assert sum(p["total"] for p in rows.values()) == 18   # 與 NJ 總數一致
