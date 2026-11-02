@@ -215,3 +215,16 @@ def test_copy_last_run_with_no_runs_opens_blank_form(app):
     client = app.test_client()
     resp = client.post("/runs/copy-last")
     assert resp.status_code == 302 and resp.headers["Location"].endswith("/runs/new")
+
+
+def test_payout_details_list_items_and_formula(loaded, app):
+    payouts = {p["name"].lower(): p for p in build_payouts(loaded, 3, 50)}
+    kia = payouts["kia"]
+    assert kia["formula"] == "154 × 97% × 50% = 74.69"
+    assert [i["item"] for i in kia["sold_items"]] == ["shield MA 60%", "face for DEX 60%",
+                                                 "face for INT 60%", "Eye for LKUK 60%"]
+    assert kia["incomplete_items"] == ["Eye for DEX 60%", "EP 11211"]
+    page = app.test_client().get("/").get_data(as_text=True)
+    assert "計算式：KIA" not in page
+    assert "154 × 97% × 50% = 74.69" in page
+    assert "shield MA 60%" in page and "未計入（缺賣出價或賣出日）" in page
