@@ -186,3 +186,6 @@ tr.has-error td { background: rgba(214, 69, 61, .10); }
 .payout-row.open .caret { transform: rotate(90deg); }
 .detail-row td { background: var(--bg); white-space: normal; padding: 12px 16px; }
 .detail-row .detail-table { background: var(--panel); }
+
+.topbar .who { margin-left: auto; color: var(--muted); font-size: 14px; }
+.topbar .logout { font-size: 14px; }
