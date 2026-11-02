@@ -412,6 +412,8 @@ def import_drops(db, text, replace=False):
 DISCORD_AUTHORIZE_URL = "https://discord.com/oauth2/authorize"
 DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token"
 DISCORD_ME_URL = "https://discord.com/api/users/@me"
+# Discord/Cloudflare 會擋 Python 預設的 User-Agent（回 403 且沒有內容），所以要自己帶一個
+DISCORD_USER_AGENT = "RMS-Loot (https://rms-loot-nj.fly.dev, 1.0)"
 
 
 def discord_exchange_code(code, config):
@@ -424,7 +426,8 @@ def discord_exchange_code(code, config):
         "redirect_uri": config["DISCORD_REDIRECT_URI"],
     }).encode()
     req = urllib.request.Request(DISCORD_TOKEN_URL, data=body,
-                                 headers={"Content-Type": "application/x-www-form-urlencoded"})
+                                 headers={"Content-Type": "application/x-www-form-urlencoded",
+                                          "User-Agent": DISCORD_USER_AGENT})
     with urllib.request.urlopen(req, timeout=10) as resp:
         return json.load(resp)["access_token"]
 
@@ -440,7 +443,8 @@ def discord_error_detail(exc):
 
 
 def discord_fetch_user_id(access_token):
-    req = urllib.request.Request(DISCORD_ME_URL, headers={"Authorization": f"Bearer {access_token}"})
+    req = urllib.request.Request(DISCORD_ME_URL, headers={"Authorization": f"Bearer {access_token}",
+                                                          "User-Agent": DISCORD_USER_AGENT})
     with urllib.request.urlopen(req, timeout=10) as resp:
         return str(json.load(resp)["id"])
 
