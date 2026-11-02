@@ -144,5 +144,15 @@ legend { color: var(--muted); font-size: 14px; padding: 0 6px; }
   .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+.toast {
+  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 14px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s;
+  max-width: 90vw; z-index: 20;
+}
+.toast.show { opacity: 1; }
+.toast.ok { border-color: var(--ok); color: var(--ok); }
+.toast.error { border-color: var(--danger); color: var(--danger); }
+tr.has-error td { background: rgba(214, 69, 61, .10); }
 .add-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; }
 .add-row .hint { margin: 0; }
