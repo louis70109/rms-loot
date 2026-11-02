@@ -79,6 +79,57 @@
     tr.classList.toggle('row-paid', isPaid);
   }
 
+  // 多格貼上：從試算表複製多列多欄，貼到表格上，從游標所在的格子開始填入，逐列自動儲存。
+  // 單一個值的貼上維持瀏覽器原本的行為。
+  const TRUE_WORDS = ['v', '✓', '✔', 'y', 'yes', 'true', '1', '已付', 'x'];
+  table.addEventListener('paste', (e) => {
+    const el = e.target;
+    if (!(el instanceof HTMLInputElement) || !el.form || !el.form.id) return;
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    if (!text || (!text.includes('\t') && !text.includes('\n'))) return;
+    e.preventDefault();
+
+    const grid = text.replace(/\r\n?/g, '\n').replace(/\n$/, '').split('\n').map((r) => r.split('\t'));
+    const rows = dataRows();
+    const startRow = rows.indexOf(el.closest('tr'));
+    const startCol = el.closest('td').cellIndex;
+    const touched = new Set();
+    let skipped = 0;
+
+    grid.forEach((cells, i) => {
+      const tr = rows[startRow + i];
+      if (!tr) { skipped += 1; return; }
+      cells.forEach((raw, j) => {
+        const td = tr.cells[startCol + j];
+        const input = td && td.querySelector('input[name]');
+        if (!input || !input.form) return;
+        const val = raw.trim();
+        if (input.type === 'checkbox') {
+          input.checked = TRUE_WORDS.includes(val.toLowerCase());
+        } else if (input.type === 'date') {
+          if (/^\d{4}-\d{2}-\d{2}$/.test(val)) input.value = val;
+          else return;
+        } else if (input.inputMode === 'decimal') {
+          input.value = val.replace(/,/g, '');
+        } else {
+          input.value = val;
+        }
+        touched.add(tr);
+      });
+    });
+
+    const saves = [];
+    touched.forEach((tr) => {
+      refreshStatus(tr);
+      const first = tr.querySelector('input[form]');
+      if (first) saves.push(save(first));
+    });
+    // 等每一列都存完，再顯示摘要（否則會被逐列的「已儲存」蓋掉）
+    let msg = `已貼上並儲存 ${touched.size} 列`;
+    if (skipped) msg += `（有 ${skipped} 列超出表格，未貼入；請先新增列）`;
+    Promise.all(saves).then(() => say(msg, skipped ? 'error' : 'ok'));
+  });
+
   table.addEventListener('change', (e) => {
     const el = e.target;
     if (el instanceof HTMLInputElement && el.form && el.name) {

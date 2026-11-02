@@ -291,3 +291,17 @@ def test_migration_adds_paid_date_to_old_database(tmp_path):
     cols = {r[1] for r in db.execute("PRAGMA table_info(drops)")}
     assert "paid_date" in cols
     assert db.execute("SELECT item, paid_date FROM drops").fetchone()["paid_date"] == ""
+
+
+def test_backup_download_is_a_valid_sqlite_snapshot(loaded, app, tmp_path):
+    client = app.test_client()
+    resp = client.get("/backup")
+    assert resp.status_code == 200
+    assert resp.headers["Content-Disposition"].startswith('attachment; filename="rms-loot-')
+    assert resp.data.startswith(b"SQLite format 3\x00")
+    snap_path = tmp_path / "snap.db"
+    snap_path.write_bytes(resp.data)
+    snap = sqlite3.connect(snap_path)
+    assert snap.execute("SELECT COUNT(*) FROM runs").fetchone()[0] == 11
+    assert snap.execute("SELECT COUNT(*) FROM drops").fetchone()[0] == 19
+    snap.close()

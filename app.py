@@ -15,6 +15,7 @@ import math
 import os
 import secrets
 import sqlite3
+import tempfile
 from datetime import date
 from pathlib import Path
 
@@ -629,6 +630,20 @@ def create_app(db_path=None):
         return redirect(url_for("drops"))
 
     # 設定 / 匯入
+    @app.get("/backup")
+    def backup():
+        """下載完整的 SQLite 備份（用 SQLite 的 backup API，寫入中也是一致的快照）。"""
+        src = get_db()
+        with tempfile.TemporaryDirectory() as tmp:
+            dst_path = Path(tmp) / "backup.db"
+            dst = sqlite3.connect(dst_path)
+            src.backup(dst)
+            dst.close()
+            data = dst_path.read_bytes()
+        name = f"rms-loot-{date.today().isoformat()}.db"
+        return Response(data, mimetype="application/octet-stream",
+                        headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
     @app.get("/settings")
     def settings():
         db = get_db()
