@@ -5,7 +5,7 @@ primary_region = "nrt"
   RMS_DB = "/data/rms_loot.db"
   RMS_REQUIRE_AUTH = "1"
   DISCORD_REDIRECT_URI = "https://rms-loot-nj.fly.dev/auth/discord/callback"
-  OWNER_DISCORD_IDS = "1566669526534324304"
+  OWNER_DISCORD_IDS = "545498458270859304"
 
 [mounts]
   source = "rms_data"
