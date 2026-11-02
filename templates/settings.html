@@ -13,13 +13,13 @@
 </section>
 
 <section class="card">
-  <h2>匯入分貝紀錄 CSV</h2>
+  <h2>匯入分贓紀錄 CSV</h2>
   <p class="hint">對應原表「RMS 分贓紀錄」那一頁。表頭需要：<code>A捲, B捲, C捲, tape</code>，可選 <code>陪打</code>（有名字 = 該場同行者是陪打）、<code>日期</code>、<code>備註</code>。
     同行者會自動從得主欄推出（非 NJ 的名字）。任何一列有錯，整批都不會寫入。</p>
   <form method="post" action="{{ url_for('import_runs_view') }}" enctype="multipart/form-data" class="form">
     <input type="file" name="file" accept=".csv,text/csv" required>
-    <label class="check"><input type="checkbox" name="replace" value="1"> 先清空現有分貝紀錄再匯入（不勾 = 附加到後面）</label>
-    <button class="btn">匯入分貝紀錄</button>
+    <label class="check"><input type="checkbox" name="replace" value="1"> 先清空現有分贓紀錄再匯入（不勾 = 附加到後面）</label>
+    <button class="btn">匯入分贓紀錄</button>
   </form>
 </section>
 
@@ -37,7 +37,7 @@
 <section class="card">
   <h2>怎麼從 Google 試算表匯出</h2>
   <ol class="hint">
-    <li>切到要匯出的那一頁（分貝紀錄、掉落物分開做）。</li>
+    <li>切到要匯出的那一頁（分贓紀錄、掉落物分開做）。</li>
     <li>選單：<strong>檔案 → 下載 → 逗號分隔值 (.csv，目前工作表)</strong>。</li>
     <li>回到這裡上傳。第一列一定要是表頭。</li>
   </ol>

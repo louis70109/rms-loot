@@ -1,6 +1,6 @@
 """RMS 分贓表系統。
 
-- 分貝紀錄（runs）：每場一筆。A捲 / B捲 / C捲 / tape 各記得主（NJ 或同行者），
+- 分贓紀錄（runs）：每場一筆。A捲 / B捲 / C捲 / tape 各記得主（NJ 或同行者），
   「陪打」記一次性同行者（只打過一次，下次再組隊就換他撿）。
 - 掉落物（drops）：每件一筆，記持有人、市價、賣出價、賣出日、是否已付。
 - 持有人應付金額 = 同名（不分大小寫）且未付的賣出價合計 × 分潤比例。
@@ -21,7 +21,7 @@ from flask import (Flask, Response, abort, flash, g, redirect, render_template, 
                    url_for)
 
 BASE_DIR = Path(__file__).resolve().parent
-ME = "NJ"  # 分貝紀錄裡代表自己的名字
+ME = "NJ"  # 分贓紀錄裡代表自己的名字
 SLOTS = (("a_pick", "A捲"), ("b_pick", "B捲"), ("c_pick", "C捲"), ("tape_pick", "tape"))
 RUN_COLS = ("run_date", "partner", "is_guest", "a_pick", "b_pick", "c_pick", "tape_pick", "note")
 DROP_COLS = ("item", "member", "market_price", "sale_price", "sold_date", "paid")
@@ -432,7 +432,7 @@ def create_app(db_path=None):
         return render_template("index.html", people=build_people(db),
                                payouts=build_payouts(db, percent), percent=percent)
 
-    # 分貝紀錄
+    # 分贓紀錄
     @app.get("/runs")
     def runs():
         rows = get_db().execute("SELECT * FROM runs ORDER BY id").fetchall()
@@ -447,9 +447,9 @@ def create_app(db_path=None):
             if not errors:
                 save_run(db, data)
                 db.commit()
-                flash("已新增分貝紀錄", "ok")
+                flash("已新增分贓紀錄", "ok")
                 return redirect(url_for("runs"))
-        return render_template("run_form.html", title="新增分貝紀錄", data=data, errors=errors,
+        return render_template("run_form.html", title="新增分贓紀錄", data=data, errors=errors,
                                names=known_names(db), action=url_for("run_new"))
 
     @app.route("/runs/<int:run_id>/edit", methods=["GET", "POST"])
@@ -464,7 +464,7 @@ def create_app(db_path=None):
             if not errors:
                 save_run(db, data, run_id)
                 db.commit()
-                flash("已更新分貝紀錄", "ok")
+                flash("已更新分贓紀錄", "ok")
                 return redirect(url_for("runs"))
         return render_template("run_form.html", title=f"編輯第 {run_id} 場", data=data, errors=errors,
                                names=known_names(db), action=url_for("run_edit", run_id=run_id))
@@ -474,7 +474,7 @@ def create_app(db_path=None):
         db = get_db()
         db.execute("DELETE FROM runs WHERE id = ?", (run_id,))
         db.commit()
-        flash("已刪除分貝紀錄", "ok")
+        flash("已刪除分贓紀錄", "ok")
         return redirect(url_for("runs"))
 
     # 掉落物
@@ -553,7 +553,7 @@ def create_app(db_path=None):
 
     @app.post("/import/runs")
     def import_runs_view():
-        return run_import(import_runs, "場分貝紀錄")
+        return run_import(import_runs, "場分贓紀錄")
 
     @app.post("/import/drops")
     def import_drops_view():
