@@ -482,6 +482,19 @@ def create_app(db_path=None):
         return render_template("run_form.html", title=f"編輯第 {run_id} 場", data=data, errors=errors,
                                names=known_names(db), action=url_for("run_edit", run_id=run_id))
 
+    @app.post("/runs/copy-last")
+    def run_copy_last():
+        db = get_db()
+        last = db.execute("SELECT * FROM runs ORDER BY id DESC LIMIT 1").fetchone()
+        if last is None:  # 還沒有任何紀錄，改用空白表單
+            return redirect(url_for("run_new"))
+        data = {c: last[c] for c in RUN_COLS}
+        save_run(db, data)
+        db.commit()
+        new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        flash(f"已沿用第 {last['id']} 場新增第 {new_id} 場，可直接在表格上修改", "ok")
+        return redirect(url_for("runs"))
+
     @app.post("/runs/<int:run_id>/delete")
     def run_delete(run_id):
         db = get_db()

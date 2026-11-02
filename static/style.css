@@ -154,3 +154,5 @@ legend { color: var(--muted); font-size: 14px; padding: 0 6px; }
 .toast.ok { border-color: var(--ok); color: var(--ok); }
 .toast.error { border-color: var(--danger); color: var(--danger); }
 tr.has-error td { background: rgba(214, 69, 61, .10); }
+.add-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; }
+.add-row .hint { margin: 0; }
