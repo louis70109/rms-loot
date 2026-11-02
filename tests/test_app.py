@@ -198,3 +198,22 @@ def test_inline_edit_error_does_not_save_and_returns_to_list(app):
     page = client.get("/runs").get_data(as_text=True)
     assert "不是 NJ" in page  # 錯誤訊息顯示在列表頁
     assert 'form="run-1"' in page  # 表格格子直接綁定到該列的表單
+
+
+def test_copy_last_run_inherits_all_fields(app):
+    client = app.test_client()
+    client.post("/runs/new", data={"run_date": "7/19", "partner": "KIA", "is_guest": "1",
+                                   "a_pick": "KIA", "b_pick": "NJ", "tape_pick": "NJ", "note": "x"})
+    resp = client.post("/runs/copy-last")
+    assert resp.status_code == 302 and resp.headers["Location"].endswith("/runs")
+    db = connect(app)
+    rows = db.execute("SELECT run_date, partner, is_guest, a_pick, b_pick, c_pick, tape_pick, note "
+                      "FROM runs ORDER BY id").fetchall()
+    assert len(rows) == 2
+    assert dict(rows[0]) == dict(rows[1])
+
+
+def test_copy_last_run_with_no_runs_opens_blank_form(app):
+    client = app.test_client()
+    resp = client.post("/runs/copy-last")
+    assert resp.status_code == 302 and resp.headers["Location"].endswith("/runs/new")

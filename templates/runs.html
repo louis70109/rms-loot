@@ -48,4 +48,8 @@
     </tbody>
   </table>
 </div>
+<form method="post" action="{{ url_for('run_copy_last') }}" class="add-row">
+  <button class="btn">＋ 沿用上一筆新增一列</button>
+  <span class="hint">會複製最後一筆的全部欄位，再到表格上改要換的地方。</span>
+</form>
 {% endblock %}
