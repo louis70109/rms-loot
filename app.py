@@ -13,6 +13,7 @@ import hmac
 import io
 import math
 import os
+import re
 import secrets
 import sqlite3
 import tempfile
@@ -71,6 +72,10 @@ CREATE TABLE IF NOT EXISTS payments (
     item_count INTEGER NOT NULL,
     item_names TEXT NOT NULL,
     formula TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS bindings (
+    discord_id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
 );
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
@@ -434,14 +439,14 @@ def create_app(db_path=None):
     app = Flask(__name__)
     app.config["DB_PATH"] = str(db_path or os.environ.get("RMS_DB") or BASE_DIR / "rms_loot.db")
     # 只用來簽署存提示訊息的 cookie，沒有登入功能，所以每次啟動自動產生即可
-    # Discord 登入：三個設定都有才啟用（ALLOWED_DISCORD_IDS 是白名單，逗號分隔）
+    # Discord 登入：三個設定都有才啟用（OWNER_DISCORD_IDS 是擁有者，逗號分隔；其他人登入後綁定名字）
     app.config["DISCORD_CLIENT_ID"] = os.environ.get("DISCORD_CLIENT_ID", "")
     app.config["DISCORD_CLIENT_SECRET"] = os.environ.get("DISCORD_CLIENT_SECRET", "")
     app.config["DISCORD_REDIRECT_URI"] = os.environ.get("DISCORD_REDIRECT_URI", "")
-    app.config["ALLOWED_DISCORD_IDS"] = {x.strip() for x in os.environ.get("ALLOWED_DISCORD_IDS", "").split(",")
-                                         if x.strip()}
+    app.config["OWNER_DISCORD_IDS"] = {x.strip() for x in os.environ.get("OWNER_DISCORD_IDS", "").split(",")
+                                       if x.strip()}
     app.config["DISCORD_ON"] = bool(app.config["DISCORD_CLIENT_ID"] and app.config["DISCORD_CLIENT_SECRET"]
-                                    and app.config["DISCORD_REDIRECT_URI"] and app.config["ALLOWED_DISCORD_IDS"])
+                                    and app.config["DISCORD_REDIRECT_URI"] and app.config["OWNER_DISCORD_IDS"])
     if app.config["DISCORD_ON"] and not os.environ.get("RMS_SECRET_KEY"):
         # 沒有固定金鑰的話，機器每次醒來都會換金鑰，登入會全部失效，所以直接拒絕啟動
         raise RuntimeError("啟用 Discord 登入時必須設定 RMS_SECRET_KEY")
@@ -459,12 +464,25 @@ def create_app(db_path=None):
 
     @app.before_request
     def password_gate():
-        if request.path == "/healthz" or request.path.startswith("/auth/"):
+        if request.path == "/healthz" or (request.path.startswith("/auth/") and app.config["DISCORD_ON"]):
             return None
         if app.config["DISCORD_ON"]:
-            if session.get("discord_id") in app.config["ALLOWED_DISCORD_IDS"]:
+            if request.path.startswith("/static/"):
+                return None
+            role = session.get("role")
+            if role == "owner":
+                return None
+            if role == "member":
+                if request.method == "GET" and request.path in ("/", "/drops"):
+                    return None
+                if request.method == "POST" and re.fullmatch(r"/drops/\d+/edit", request.path):
+                    return None  # 權限在 drop_edit 裡逐筆檢查
+                return Response("沒有權限", 403)
+            if role == "unbound" and request.path == "/auth/bind":
                 return None
             if request.method == "GET":
+                if role == "unbound":
+                    return redirect(url_for("discord_bind"))
                 return redirect(url_for("discord_login"))
             return Response("請先登入", 401)
         expected = app.config["APP_PASSWORD"]
@@ -506,11 +524,45 @@ def create_app(db_path=None):
             discord_id = discord_fetch_user_id(token)
         except Exception:  # 網路或 Discord 端錯誤
             return Response("無法向 Discord 取得資料，請稍後再試", 502)
-        if discord_id not in app.config["ALLOWED_DISCORD_IDS"]:
-            return Response("這個 Discord 帳號沒有使用權限", 403)
         session.clear()
         session["discord_id"] = discord_id
-        return redirect(url_for("index"))
+        if discord_id in app.config["OWNER_DISCORD_IDS"]:
+            session["role"], session["name"] = "owner", ME
+            return redirect(url_for("index"))
+        bound = get_db().execute("SELECT name FROM bindings WHERE discord_id = ?", (discord_id,)).fetchone()
+        if bound:
+            session["role"], session["name"] = "member", bound["name"]
+            return redirect(url_for("index"))
+        session["role"] = "unbound"
+        return redirect(url_for("discord_bind"))
+
+    @app.route("/auth/bind", methods=["GET", "POST"])
+    def discord_bind():
+        if not app.config["DISCORD_ON"]:
+            abort(404)
+        if session.get("role") not in ("unbound", "owner", "member") or not session.get("discord_id"):
+            return redirect(url_for("discord_login"))
+        if session.get("role") != "unbound":
+            return redirect(url_for("index"))
+        db = get_db()
+        if request.method == "POST":
+            name = clean(request.form.get("name"))
+            if not name or name.lower() == ME.lower():
+                flash("請選一個名字", "error")
+            else:
+                try:
+                    db.execute("INSERT INTO bindings (discord_id, name) VALUES (?, ?)",
+                               (session["discord_id"], name))
+                    db.commit()
+                except sqlite3.IntegrityError:
+                    flash(f"「{name}」已經被綁定了，請選別的名字", "error")
+                else:
+                    session["role"], session["name"] = "member", name
+                    flash(f"已綁定為 {name}", "ok")
+                    return redirect(url_for("index"))
+        taken = {r["name"].lower() for r in db.execute("SELECT name FROM bindings")}
+        choices = [n for n in known_names(db) if n.lower() not in taken]
+        return render_template("auth_bind.html", choices=choices)
 
     @app.get("/auth/logout")
     def discord_logout():
@@ -686,8 +738,15 @@ def create_app(db_path=None):
         if row is None:
             abort(404)
         data, errors = dict(row), []
+        if session.get("role") == "member":
+            # 成員只能用表格改「持有人是自己」的掉落物；持有人與付款狀態不能改
+            if request.method != "POST" or not request.form.get("inline") or \
+                    row["member"].lower() != session.get("name", "").lower():
+                return Response("沒有權限", 403)
         if request.method == "POST":
             data, errors = read_drop_form(db, request.form)
+            if session.get("role") == "member":
+                data["member"], data["paid"], data["paid_date"] = row["member"], row["paid"], row["paid_date"]
             if request.form.get("inline"):  # 表格背景儲存：回 JSON，不跳頁
                 if errors:
                     return jsonify(ok=False, errors=errors), 422

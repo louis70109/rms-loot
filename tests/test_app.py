@@ -312,9 +312,10 @@ DISCORD_ENV = {
     "DISCORD_CLIENT_ID": "123",
     "DISCORD_CLIENT_SECRET": "shh",
     "DISCORD_REDIRECT_URI": "https://example.test/auth/discord/callback",
-    "ALLOWED_DISCORD_IDS": "1566669526534324304",
+    "OWNER_DISCORD_IDS": "1566669526534324304",
     "RMS_SECRET_KEY": "fixed-test-key",
 }
+OWNER = "1566669526534324304"
 
 
 @pytest.fixture
@@ -329,6 +330,16 @@ def discord_app(tmp_path, monkeypatch):
 def _login_state(client):
     loc = client.get("/auth/discord/login").headers["Location"]
     return dict(urllib.parse.parse_qsl(urllib.parse.urlparse(loc).query))["state"], loc
+
+
+def _log_in_as(app, monkeypatch, discord_id):
+    import app as app_module
+    monkeypatch.setattr(app_module, "discord_exchange_code", lambda code, cfg: "tok")
+    monkeypatch.setattr(app_module, "discord_fetch_user_id", lambda tok: discord_id)
+    client = app.test_client()
+    state, _ = _login_state(client)
+    client.get(f"/auth/discord/callback?code=abc&state={state}")
+    return client
 
 
 def test_discord_gate_redirects_anonymous_to_login(discord_app):
@@ -353,25 +364,56 @@ def test_discord_callback_rejects_bad_state(discord_app):
     assert client.get("/auth/discord/callback?code=x&state=wrong").status_code == 400
 
 
-def test_discord_callback_allows_whitelisted_user(discord_app, monkeypatch):
-    import app as app_module
-    monkeypatch.setattr(app_module, "discord_exchange_code", lambda code, cfg: "tok")
-    monkeypatch.setattr(app_module, "discord_fetch_user_id", lambda tok: "1566669526534324304")
-    client = discord_app.test_client()
-    state, _ = _login_state(client)
-    resp = client.get(f"/auth/discord/callback?code=abc&state={state}")
-    assert resp.status_code == 302
+def test_owner_has_full_access(discord_app, monkeypatch):
+    client = _log_in_as(discord_app, monkeypatch, OWNER)
     assert client.get("/").status_code == 200
+    assert client.get("/settings").status_code == 200
+    assert client.get("/runs").status_code == 200
 
 
-def test_discord_callback_blocks_other_users(discord_app, monkeypatch):
-    import app as app_module
-    monkeypatch.setattr(app_module, "discord_exchange_code", lambda code, cfg: "tok")
-    monkeypatch.setattr(app_module, "discord_fetch_user_id", lambda tok: "999")
+def test_unbound_user_is_sent_to_bind_page(discord_app, monkeypatch):
+    client = _log_in_as(discord_app, monkeypatch, "999")
+    resp = client.get("/")
+    assert resp.status_code == 302 and resp.headers["Location"].endswith("/auth/bind")
+    assert client.get("/auth/bind").status_code == 200
+
+
+def test_bind_then_member_sees_only_overview_and_own_drops(discord_app, monkeypatch):
+    owner = _log_in_as(discord_app, monkeypatch, OWNER)
+    owner.post("/drops/new", data={"item": "mine", "member": "KIA", "sale_price": "10", "sold_date": "1/1"})
+    owner.post("/drops/new", data={"item": "theirs", "member": "ERIC", "sale_price": "10", "sold_date": "1/1"})
+    member = _log_in_as(discord_app, monkeypatch, "555")
+    resp = member.post("/auth/bind", data={"name": "KIA"})
+    assert resp.status_code == 302
+    assert member.get("/").status_code == 200
+    assert member.get("/drops").status_code == 200
+    assert member.get("/runs").status_code == 403
+    assert member.get("/settings").status_code == 403
+    assert member.post("/payouts/pay", data={"member": "KIA"}).status_code == 403
+    rows = {r["item"]: r["id"] for r in connect(discord_app).execute("SELECT id, item FROM drops")}
+    own = member.post(f"/drops/{rows['mine']}/edit", data={"inline": "1", "item": "mine", "member": "KIA",
+                                                            "sale_price": "20", "sold_date": "2/2", "paid": "1"})
+    assert own.status_code == 200
+    db = connect(discord_app)
+    row = db.execute("SELECT sale_price, paid FROM drops WHERE id = ?", (rows["mine"],)).fetchone()
+    assert row["sale_price"] == 20 and row["paid"] == 0  # 成員不能改已付狀態
+    other = member.post(f"/drops/{rows['theirs']}/edit", data={"inline": "1", "item": "theirs", "member": "ERIC",
+                                                               "sale_price": "1", "sold_date": "2/2"})
+    assert other.status_code == 403
+
+
+def test_name_can_only_be_bound_once(discord_app, monkeypatch):
+    first = _log_in_as(discord_app, monkeypatch, "111")
+    assert first.post("/auth/bind", data={"name": "XL"}).status_code == 302
+    second = _log_in_as(discord_app, monkeypatch, "222")
+    resp = second.post("/auth/bind", data={"name": "XL"})
+    assert resp.status_code == 200  # 重新顯示表單，不綁定
+    assert 'value="XL"' not in resp.get_data(as_text=True)  # 已綁定的名字不能再選
+
+
+def test_static_files_are_open_before_login(discord_app):
     client = discord_app.test_client()
-    state, _ = _login_state(client)
-    assert client.get(f"/auth/discord/callback?code=abc&state={state}").status_code == 403
-    assert client.get("/").status_code == 302  # 仍然要登入
+    assert client.get("/static/style.css").status_code == 200
 
 
 def test_discord_requires_fixed_secret_key(tmp_path, monkeypatch):
