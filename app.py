@@ -248,20 +248,24 @@ def build_payouts(db, fee_percent, share_percent):
     for d in db.execute("SELECT * FROM drops ORDER BY id").fetchall():
         g_ = groups.setdefault(d["member"].lower(), {
             "name": d["member"], "paid_items": 0, "unpaid_items": 0,
-            "unpaid_sum": 0.0, "incomplete": 0})
+            "unpaid_sum": 0.0, "incomplete": 0, "sold_items": [], "incomplete_items": []})
         if d["paid"]:
             g_["paid_items"] += 1
         elif d["sale_price"] is None or not d["sold_date"]:
             g_["incomplete"] += 1  # 還沒填賣出價或賣出日，先不計入
+            g_["incomplete_items"].append(d["item"])
         else:
             g_["unpaid_items"] += 1
             g_["unpaid_sum"] += d["sale_price"]
+            g_["sold_items"].append({"item": d["item"], "sale_price": d["sale_price"], "sold_date": d["sold_date"]})
 
     factor = (100 - fee_percent) / 100 * share_percent / 100
     result = sorted(groups.values(), key=lambda x: x["name"].lower())
     for g_ in result:
         g_["unpaid_sum"] = round(g_["unpaid_sum"], 2)
         g_["payout"] = round(g_["unpaid_sum"] * factor, 2)
+        g_["formula"] = (f"{g_['unpaid_sum']:g} × {100 - fee_percent:g}% × {share_percent:g}% "
+                         f"= {g_['payout']:.2f}")
     return result
 
 

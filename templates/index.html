@@ -89,4 +89,29 @@
     </table>
   </div>
 </section>
+<section>
+  <h2>應付金額明細（點持有人展開，可直接截圖）</h2>
+  {% for p in payouts if p.sold_items or p.incomplete_items %}
+    <details class="payout-detail">
+      <summary><strong>{{ p.name }}</strong>　應付 {{ "%.2f"|format(p.payout) }}</summary>
+      <table class="detail-table">
+        <thead><tr><th>物品</th><th class="num">賣出價</th><th>賣出日</th></tr></thead>
+        <tbody>
+          {% for it in p.sold_items %}
+            <tr><td>{{ it.item }}</td><td class="num">{{ it.sale_price|money }}</td><td>{{ it.sold_date }}</td></tr>
+          {% endfor %}
+          <tr class="total"><td><strong>未付合計（{{ p.unpaid_items }} 件）</strong></td><td class="num"><strong>{{ "%.2f"|format(p.unpaid_sum) }}</strong></td><td></td></tr>
+        </tbody>
+      </table>
+      <p class="formula">計算式：{{ p.formula }}</p>
+      <p class="formula-note">＝ 未付賣出價合計 × (1 − 手續費 {{ "%g"|format(fee) }}%) × 分配 {{ "%g"|format(share) }}%</p>
+      {% if p.incomplete_items %}
+        <p class="hint">未計入（缺賣出價或賣出日）：{{ p.incomplete_items|join('、') }}</p>
+      {% endif %}
+    </details>
+  {% else %}
+    <p class="muted">目前沒有未付項目。</p>
+  {% endfor %}
+</section>
+
 {% endblock %}
