@@ -226,3 +226,12 @@ def test_partner_breakdown_matches_sheet(loaded):
     assert rows["KIA"]["total"] == 6 and rows["KIA"]["runs"] == 4
     assert rows["（沒有同行者）"]["total"] == 8
     assert sum(p["total"] for p in rows.values()) == 18   # 與 NJ 總數一致
+
+
+def test_drops_page_shows_payment_status_icons(app):
+    client = app.test_client()
+    client.post("/drops/new", data={"item": "A", "member": "KIA", "sale_price": "10", "sold_date": "1/1"})
+    client.post("/drops/new", data={"item": "B", "member": "KIA", "sale_price": "10", "sold_date": "1/1", "paid": "1"})
+    client.post("/drops/new", data={"item": "C", "member": "KIA", "sale_price": "10"})
+    page = client.get("/drops").get_data(as_text=True)
+    assert "⏳ 未付" in page and "✅ 已付" in page and "⚠️ 未完成" in page
