@@ -143,3 +143,6 @@ legend { color: var(--muted); font-size: 14px; padding: 0 6px; }
   .grid2, .grid4 { grid-template-columns: 1fr; }
   .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+.add-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; }
+.add-row .hint { margin: 0; }
