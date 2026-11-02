@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}綁定名字{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>第一次登入：選擇你是誰</h2>
+  <p class="hint">選一個名字綁定到你的 Discord 帳號。每個名字只能綁一次，綁定後只能改自己名下的掉落物。</p>
+  {% if choices %}
+  <form method="post" action="{{ url_for('discord_bind') }}" class="form">
+    {% for n in choices %}
+      <label class="check"><input type="radio" name="name" value="{{ n }}" required> {{ n }}</label>
+    {% endfor %}
+    <button class="btn">綁定</button>
+  </form>
+  {% else %}
+    <p class="muted">目前沒有可以綁定的名字，請聯絡管理者。</p>
+  {% endif %}
+</section>
+{% endblock %}
