@@ -20,7 +20,10 @@ from datetime import date
 from pathlib import Path
 
 from flask import (Flask, Response, abort, flash, g, jsonify, redirect, render_template, request,
-                   url_for)
+                   session, url_for)
+import json
+import urllib.parse
+import urllib.request
 
 BASE_DIR = Path(__file__).resolve().parent
 ME = "NJ"  # 分贓紀錄裡代表自己的名字
@@ -401,11 +404,51 @@ def import_drops(db, text, replace=False):
 
 # ---------- Flask ----------
 
+DISCORD_AUTHORIZE_URL = "https://discord.com/oauth2/authorize"
+DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token"
+DISCORD_ME_URL = "https://discord.com/api/users/@me"
+
+
+def discord_exchange_code(code, config):
+    """用授權碼換 access token（伺服器對伺服器，不經過瀏覽器）。"""
+    body = urllib.parse.urlencode({
+        "client_id": config["DISCORD_CLIENT_ID"],
+        "client_secret": config["DISCORD_CLIENT_SECRET"],
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": config["DISCORD_REDIRECT_URI"],
+    }).encode()
+    req = urllib.request.Request(DISCORD_TOKEN_URL, data=body,
+                                 headers={"Content-Type": "application/x-www-form-urlencoded"})
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.load(resp)["access_token"]
+
+
+def discord_fetch_user_id(access_token):
+    req = urllib.request.Request(DISCORD_ME_URL, headers={"Authorization": f"Bearer {access_token}"})
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return str(json.load(resp)["id"])
+
+
 def create_app(db_path=None):
     app = Flask(__name__)
     app.config["DB_PATH"] = str(db_path or os.environ.get("RMS_DB") or BASE_DIR / "rms_loot.db")
     # 只用來簽署存提示訊息的 cookie，沒有登入功能，所以每次啟動自動產生即可
+    # Discord 登入：三個設定都有才啟用（ALLOWED_DISCORD_IDS 是白名單，逗號分隔）
+    app.config["DISCORD_CLIENT_ID"] = os.environ.get("DISCORD_CLIENT_ID", "")
+    app.config["DISCORD_CLIENT_SECRET"] = os.environ.get("DISCORD_CLIENT_SECRET", "")
+    app.config["DISCORD_REDIRECT_URI"] = os.environ.get("DISCORD_REDIRECT_URI", "")
+    app.config["ALLOWED_DISCORD_IDS"] = {x.strip() for x in os.environ.get("ALLOWED_DISCORD_IDS", "").split(",")
+                                         if x.strip()}
+    app.config["DISCORD_ON"] = bool(app.config["DISCORD_CLIENT_ID"] and app.config["DISCORD_CLIENT_SECRET"]
+                                    and app.config["DISCORD_REDIRECT_URI"] and app.config["ALLOWED_DISCORD_IDS"])
+    if app.config["DISCORD_ON"] and not os.environ.get("RMS_SECRET_KEY"):
+        # 沒有固定金鑰的話，機器每次醒來都會換金鑰，登入會全部失效，所以直接拒絕啟動
+        raise RuntimeError("啟用 Discord 登入時必須設定 RMS_SECRET_KEY")
     app.config["SECRET_KEY"] = os.environ.get("RMS_SECRET_KEY") or secrets.token_hex(32)
+    if app.config["DISCORD_ON"]:
+        app.config["SESSION_COOKIE_SECURE"] = True
+        app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.jinja_env.globals["SLOTS"] = SLOTS
     app.jinja_env.filters["money"] = lambda v: "" if v is None else f"{v:g}"
 
@@ -416,8 +459,14 @@ def create_app(db_path=None):
 
     @app.before_request
     def password_gate():
-        if request.path == "/healthz":
+        if request.path == "/healthz" or request.path.startswith("/auth/"):
             return None
+        if app.config["DISCORD_ON"]:
+            if session.get("discord_id") in app.config["ALLOWED_DISCORD_IDS"]:
+                return None
+            if request.method == "GET":
+                return redirect(url_for("discord_login"))
+            return Response("請先登入", 401)
         expected = app.config["APP_PASSWORD"]
         if not expected:
             if app.config["REQUIRE_AUTH"]:
@@ -427,6 +476,46 @@ def create_app(db_path=None):
         if auth and hmac.compare_digest(auth.password or "", expected):
             return None
         return Response("需要密碼", 401, {"WWW-Authenticate": 'Basic realm="RMS 分贓表"'})
+
+    @app.get("/auth/discord/login")
+    def discord_login():
+        if not app.config["DISCORD_ON"]:
+            abort(404)
+        state = secrets.token_urlsafe(24)
+        session["oauth_state"] = state
+        query = urllib.parse.urlencode({
+            "client_id": app.config["DISCORD_CLIENT_ID"],
+            "redirect_uri": app.config["DISCORD_REDIRECT_URI"],
+            "response_type": "code",
+            "scope": "identify",
+            "state": state,
+        })
+        return redirect(f"{DISCORD_AUTHORIZE_URL}?{query}")
+
+    @app.get("/auth/discord/callback")
+    def discord_callback():
+        if not app.config["DISCORD_ON"]:
+            abort(404)
+        if request.args.get("error"):
+            return Response("Discord 登入已取消", 400)
+        expected = session.pop("oauth_state", None)
+        if not expected or not hmac.compare_digest(request.args.get("state", ""), expected):
+            return Response("登入驗證失敗（state 不符），請重新登入", 400)
+        try:
+            token = discord_exchange_code(request.args.get("code", ""), app.config)
+            discord_id = discord_fetch_user_id(token)
+        except Exception:  # 網路或 Discord 端錯誤
+            return Response("無法向 Discord 取得資料，請稍後再試", 502)
+        if discord_id not in app.config["ALLOWED_DISCORD_IDS"]:
+            return Response("這個 Discord 帳號沒有使用權限", 403)
+        session.clear()
+        session["discord_id"] = discord_id
+        return redirect(url_for("index"))
+
+    @app.get("/auth/logout")
+    def discord_logout():
+        session.clear()
+        return redirect(url_for("index"))
 
     @app.get("/healthz")
     def healthz():
