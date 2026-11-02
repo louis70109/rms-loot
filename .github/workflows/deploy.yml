@@ -28,6 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+      DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+      RMS_SECRET_KEY: ${{ secrets.RMS_SECRET_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
@@ -41,5 +44,11 @@ jobs:
           if ! flyctl volumes list -a rms-loot-nj 2>/dev/null | grep -q rms_data; then
             flyctl volumes create rms_data --region nrt --size 1 -a rms-loot-nj -y
           fi
+      - name: Stage app secrets
+        run: |
+          flyctl secrets set --stage -a rms-loot-nj \
+            DISCORD_CLIENT_ID="$DISCORD_CLIENT_ID" \
+            DISCORD_CLIENT_SECRET="$DISCORD_CLIENT_SECRET" \
+            RMS_SECRET_KEY="$RMS_SECRET_KEY"
       - name: Deploy to fly.io
         run: flyctl deploy --remote-only -a rms-loot-nj

@@ -1,4 +1,5 @@
 import sqlite3
+import urllib.parse
 from pathlib import Path
 
 import pytest
@@ -305,3 +306,77 @@ def test_backup_download_is_a_valid_sqlite_snapshot(loaded, app, tmp_path):
     assert snap.execute("SELECT COUNT(*) FROM runs").fetchone()[0] == 11
     assert snap.execute("SELECT COUNT(*) FROM drops").fetchone()[0] == 19
     snap.close()
+
+
+DISCORD_ENV = {
+    "DISCORD_CLIENT_ID": "123",
+    "DISCORD_CLIENT_SECRET": "shh",
+    "DISCORD_REDIRECT_URI": "https://example.test/auth/discord/callback",
+    "ALLOWED_DISCORD_IDS": "1566669526534324304",
+    "RMS_SECRET_KEY": "fixed-test-key",
+}
+
+
+@pytest.fixture
+def discord_app(tmp_path, monkeypatch):
+    for k in ("APP_PASSWORD", "RMS_REQUIRE_AUTH"):
+        monkeypatch.delenv(k, raising=False)
+    for k, v in DISCORD_ENV.items():
+        monkeypatch.setenv(k, v)
+    return create_app(tmp_path / "discord.db")
+
+
+def _login_state(client):
+    loc = client.get("/auth/discord/login").headers["Location"]
+    return dict(urllib.parse.parse_qsl(urllib.parse.urlparse(loc).query))["state"], loc
+
+
+def test_discord_gate_redirects_anonymous_to_login(discord_app):
+    client = discord_app.test_client()
+    resp = client.get("/")
+    assert resp.status_code == 302 and resp.headers["Location"].endswith("/auth/discord/login")
+    assert client.get("/healthz").status_code == 200
+    assert client.post("/runs/new", data={}).status_code == 401
+
+
+def test_discord_login_points_to_discord_with_identify_scope(discord_app):
+    client = discord_app.test_client()
+    _, loc = _login_state(client)
+    assert loc.startswith("https://discord.com/oauth2/authorize?")
+    q = dict(urllib.parse.parse_qsl(urllib.parse.urlparse(loc).query))
+    assert q["client_id"] == "123" and q["scope"] == "identify" and q["response_type"] == "code"
+
+
+def test_discord_callback_rejects_bad_state(discord_app):
+    client = discord_app.test_client()
+    _login_state(client)
+    assert client.get("/auth/discord/callback?code=x&state=wrong").status_code == 400
+
+
+def test_discord_callback_allows_whitelisted_user(discord_app, monkeypatch):
+    import app as app_module
+    monkeypatch.setattr(app_module, "discord_exchange_code", lambda code, cfg: "tok")
+    monkeypatch.setattr(app_module, "discord_fetch_user_id", lambda tok: "1566669526534324304")
+    client = discord_app.test_client()
+    state, _ = _login_state(client)
+    resp = client.get(f"/auth/discord/callback?code=abc&state={state}")
+    assert resp.status_code == 302
+    assert client.get("/").status_code == 200
+
+
+def test_discord_callback_blocks_other_users(discord_app, monkeypatch):
+    import app as app_module
+    monkeypatch.setattr(app_module, "discord_exchange_code", lambda code, cfg: "tok")
+    monkeypatch.setattr(app_module, "discord_fetch_user_id", lambda tok: "999")
+    client = discord_app.test_client()
+    state, _ = _login_state(client)
+    assert client.get(f"/auth/discord/callback?code=abc&state={state}").status_code == 403
+    assert client.get("/").status_code == 302  # 仍然要登入
+
+
+def test_discord_requires_fixed_secret_key(tmp_path, monkeypatch):
+    for k, v in DISCORD_ENV.items():
+        monkeypatch.setenv(k, v)
+    monkeypatch.delenv("RMS_SECRET_KEY")
+    with pytest.raises(RuntimeError):
+        create_app(tmp_path / "nokey.db")
