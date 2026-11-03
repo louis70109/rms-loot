@@ -479,3 +479,9 @@ def test_logout_button_shows_when_logged_in(discord_app, monkeypatch):
     assert "/auth/logout" in page and "登出" in page
     anon = discord_app.test_client().get("/auth/discord/login")
     assert anon.status_code == 302  # 未登入時不會顯示登出（登入頁本身不渲染導覽列）
+
+
+def test_overview_shows_total_payout_with_currency(loaded, app):
+    page = app.test_client().get("/").get_data(as_text=True)
+    assert "本次應付合計" in page
+    assert "NT$ 108.64" in page  # 範例資料 KIA：224 × 97% × 50%
