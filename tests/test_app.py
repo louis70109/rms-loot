@@ -481,6 +481,19 @@ def test_logout_button_shows_when_logged_in(discord_app, monkeypatch):
     assert anon.status_code == 302  # 未登入時不會顯示登出（登入頁本身不渲染導覽列）
 
 
+def test_pwa_manifest_and_icons_are_served(app):
+    client = app.test_client()
+    page = client.get("/").get_data(as_text=True)
+    assert 'rel="manifest"' in page and "apple-touch-icon" in page
+    resp = client.get("/static/manifest.webmanifest")
+    assert resp.status_code == 200
+    data = resp.get_json(force=True)
+    assert data["name"] == "RMS 分贓表" and data["display"] == "standalone"
+    assert any(i["sizes"] == "192x192" for i in data["icons"])
+    png = client.get("/static/icon-192.png")
+    assert png.status_code == 200 and png.data[:8] == b"\x89PNG\r\n\x1a\n"
+
+
 def test_overview_shows_total_payout_with_currency(loaded, app):
     page = app.test_client().get("/").get_data(as_text=True)
     assert "本次應付合計" in page
