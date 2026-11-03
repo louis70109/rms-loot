@@ -65,6 +65,11 @@
 
 <section>
   <h2>持有人應付金額（原表 G 欄）</h2>
+  <div class="grand-total">
+    <span>本次應付合計</span>
+    <strong>NT$ {{ "%.2f"|format(payouts|sum(attribute='payout')) }}</strong>
+    <span class="grand-sub">{{ payouts|selectattr('payout', 'gt', 0)|list|length }} 位持有人要付</span>
+  </div>
   <p class="hint">應付 = 未付賣出價合計 × (1 − 手續費 <strong>{{ "%g"|format(fee) }}%</strong>) × 分配 <strong>{{ "%g"|format(share) }}%</strong>。
     只要未付且有賣出價就計入；缺賣出價的不計金額，列在「未完成」。同名不分大小寫合併。</p>
   <div class="table-wrap">
@@ -80,7 +85,7 @@
             <td>{{ p.unpaid_items }}</td>
             <td class="num">{{ "%.2f"|format(p.unpaid_sum) }}</td>
             <td class="num due-cell {{ 'due' if p.payout > 0 else '' }}">
-              {{ "%.2f"|format(p.payout) }}{% if has %} <span class="caret">▸</span>{% endif %}
+              <span class="pay-amount">NT$ {{ "%.2f"|format(p.payout) }}</span>{% if has %} <span class="caret">▸</span>{% endif %}
             </td>
             <td>{{ p.incomplete or "" }}</td>
             <td>{{ p.paid_items }}</td>

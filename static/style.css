@@ -189,3 +189,9 @@ tr.has-error td { background: rgba(214, 69, 61, .10); }
 
 .topbar .who { margin-left: auto; color: var(--muted); font-size: 14px; }
 .topbar .logout { font-size: 14px; }
+
+.grand-total { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; background: var(--panel); border: 2px solid var(--ok); border-radius: 12px; padding: 14px 18px; margin-bottom: 14px; }
+.grand-total strong { font-size: 28px; color: var(--ok); font-variant-numeric: tabular-nums; }
+.grand-total .grand-sub { color: var(--muted); font-size: 14px; }
+.pay-amount { font-size: 18px; font-weight: 700; color: var(--ok); font-variant-numeric: tabular-nums; }
+.payout-row:not(.has-detail) .pay-amount { color: var(--muted); font-weight: 400; font-size: 15px; }

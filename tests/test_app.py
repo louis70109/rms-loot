@@ -492,3 +492,9 @@ def test_pwa_manifest_and_icons_are_served(app):
     assert any(i["sizes"] == "192x192" for i in data["icons"])
     png = client.get("/static/icon-192.png")
     assert png.status_code == 200 and png.data[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_overview_shows_total_payout_with_currency(loaded, app):
+    page = app.test_client().get("/").get_data(as_text=True)
+    assert "本次應付合計" in page
+    assert "NT$ 108.64" in page  # 範例資料 KIA：224 × 97% × 50%
