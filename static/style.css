@@ -268,3 +268,5 @@ td.center input[type="checkbox"] { width: 16px; height: 16px; }
   .brand { padding: 12px; }
   .grand-total strong { font-size: 32px; }
 }
+
+.grand-total small, .pay-amount small { font: 600 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .08em; margin-left: 4px; }

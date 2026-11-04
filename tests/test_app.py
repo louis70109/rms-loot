@@ -497,4 +497,4 @@ def test_pwa_manifest_and_icons_are_served(app):
 def test_overview_shows_total_payout_with_currency(loaded, app):
     page = app.test_client().get("/").get_data(as_text=True)
     assert "本次應付合計" in page
-    assert "NT$ 108.64" in page  # 範例資料 KIA：224 × 97% × 50%
+    assert "108.64 <small>楓幣</small>" in page  # 範例資料 KIA：224 × 97% × 50%
