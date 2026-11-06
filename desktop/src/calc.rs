@@ -79,24 +79,26 @@ pub fn holders(drops: &[Drop], fee: f64, share: f64) -> Vec<Holder> {
 }
 
 /// 人員統計：同行次數、各捲拿到幾次、陪打與「下次換他撿」。NJ 排第一。
+/// 取得（沒有就建立）某人的紀錄，回傳小寫鍵值。
+fn ensure_person(map: &mut BTreeMap<String, Person>, name: &str) -> String {
+    let key = name.to_lowercase();
+    map.entry(key.clone()).or_insert_with(|| Person {
+        name: name.to_string(),
+        runs: 0,
+        guest_runs: 0,
+        picks: [0; 4],
+        total: 0,
+        next_turn: false,
+    });
+    key
+}
+
 pub fn people(runs: &[Run]) -> Vec<Person> {
     let mut map: BTreeMap<String, Person> = BTreeMap::new();
-    let mut get = |name: &str| -> String {
-        let key = name.to_lowercase();
-        map.entry(key.clone()).or_insert_with(|| Person {
-            name: name.to_string(),
-            runs: 0,
-            guest_runs: 0,
-            picks: [0; 4],
-            total: 0,
-            next_turn: false,
-        });
-        key
-    };
-    get(ME);
+    ensure_person(&mut map, ME);
     for r in runs {
         if !r.partner.is_empty() {
-            let key = get(&r.partner);
+            let key = ensure_person(&mut map, &r.partner);
             let p = map.get_mut(&key).expect("just inserted");
             p.runs += 1;
             if r.is_guest {
@@ -105,7 +107,7 @@ pub fn people(runs: &[Run]) -> Vec<Person> {
         }
         for (i, pick) in r.picks.iter().enumerate() {
             if !pick.is_empty() {
-                let key = get(pick);
+                let key = ensure_person(&mut map, pick);
                 let p = map.get_mut(&key).expect("just inserted");
                 p.picks[i] += 1;
                 p.total += 1;

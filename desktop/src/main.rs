@@ -9,7 +9,7 @@ use calc::{Holder, Person};
 use db::{Drop, Run};
 use gpui::{
     div, prelude::*, px, rgb, size, App, Application, Bounds, ClickEvent, Context, Div,
-    FontWeight, Window, WindowBounds, WindowOptions,
+    FontWeight, SharedString, Stateful, Window, WindowBounds, WindowOptions,
 };
 use std::collections::HashSet;
 use std::path::PathBuf;
@@ -125,6 +125,7 @@ impl Desktop {
             .child(div().flex_1())
             .child(
                 div()
+                    .id("reload")
                     .px_4()
                     .py_3()
                     .border_l_1()
@@ -139,7 +140,7 @@ impl Desktop {
             )
     }
 
-    fn tab_button(&self, label: &'static str, tab: Tab, cx: &mut Context<Self>) -> Div {
+    fn tab_button(&self, label: &'static str, tab: Tab, cx: &mut Context<Self>) -> Stateful<Div> {
         let active = self.tab == tab;
         let base = div()
             .px_4()
@@ -152,7 +153,7 @@ impl Desktop {
         } else {
             base.hover(|s| s.bg(rgb(FG)).text_color(rgb(BG)))
         };
-        styled.child(label).on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+        styled.id(label).child(label).on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
             this.tab = tab;
             cx.notify();
         }))
@@ -281,12 +282,13 @@ impl Desktop {
             .child(people_list)
     }
 
-    fn holder_row(&self, h: &Holder, cx: &mut Context<Self>) -> Div {
+    fn holder_row(&self, h: &Holder, cx: &mut Context<Self>) -> Stateful<Div> {
         let key = h.key.clone();
         let expanded = self.expanded.contains(&h.key);
         let caret = if expanded { "▾" } else { "▸" };
         let amount_color = if h.payout > 0.0 { ACCENT } else { MUTED };
         div()
+            .id(SharedString::from(format!("holder-{}", h.key)))
             .flex()
             .items_center()
             .px_3()
@@ -376,10 +378,10 @@ impl Desktop {
             ("⏳ 未付", FG)
         };
         let status = div()
+            .id(SharedString::from(format!("paid-{id}")))
             .w(px(190.0))
             .child(
                 div()
-                    .inline_block()
                     .px_2()
                     .py_1()
                     .border_1()
@@ -559,7 +561,7 @@ impl Render for Desktop {
             .text_color(rgb(FG))
             .text_sm()
             .child(self.topbar(cx))
-            .child(div().flex_1().overflow_y_scroll().p_6().child(content));
+            .child(div().flex_1().id("content").overflow_y_scroll().p_6().child(content));
 
         if let Some((text, is_error)) = &self.notice {
             let color = if *is_error { DANGER } else { FG };
