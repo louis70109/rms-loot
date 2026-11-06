@@ -480,10 +480,21 @@ def create_app(db_path=None):
     # RMS_REQUIRE_AUTH=1 且沒設密碼時，除了 /healthz 之外一律 503，避免公開裸奔。
     app.config["APP_PASSWORD"] = os.environ.get("APP_PASSWORD", "")
     app.config["REQUIRE_AUTH"] = os.environ.get("RMS_REQUIRE_AUTH") == "1"
+    # 給桌面版等程式用的 API token（Bearer）。沒設就關閉 /api/*。
+    app.config["API_TOKEN"] = os.environ.get("RMS_API_TOKEN", "")
 
     @app.before_request
     def password_gate():
         if request.path == "/healthz" or (request.path.startswith("/auth/") and app.config["DISCORD_ON"]):
+            return None
+        if request.path.startswith("/api/"):
+            # /api/* 只用 token 驗證，不走 Discord / 密碼閘門
+            expected = app.config["API_TOKEN"]
+            if not expected:
+                abort(404)
+            scheme, _, token = (request.headers.get("Authorization") or "").partition(" ")
+            if scheme != "Bearer" or not hmac.compare_digest(token.strip(), expected):
+                return jsonify(ok=False, error="unauthorized"), 401
             return None
         if app.config["DISCORD_ON"]:
             if request.path.startswith("/static/"):
@@ -596,6 +607,39 @@ def create_app(db_path=None):
     @app.get("/healthz")
     def healthz():
         return "ok"
+
+    # ---- 唯讀 JSON API（Bearer token，見 password_gate）----
+    @app.get("/api/settings")
+    def api_settings():
+        db = get_db()
+        return jsonify(fee_percent=get_setting(db, "payout_fee_percent", 3.0),
+                       share_percent=get_setting(db, "payout_share_percent", 50.0))
+
+    @app.get("/api/runs")
+    def api_runs():
+        rows = get_db().execute(
+            "SELECT id, run_date, partner, is_guest, a_pick, b_pick, c_pick, tape_pick, note "
+            "FROM runs ORDER BY id").fetchall()
+        return jsonify([{**dict(r), "is_guest": bool(r["is_guest"])} for r in rows])
+
+    @app.get("/api/drops")
+    def api_drops():
+        rows = get_db().execute(
+            "SELECT id, item, member, market_price, sale_price, sold_date, paid, paid_date "
+            "FROM drops ORDER BY id").fetchall()
+        return jsonify([{**dict(r), "paid": bool(r["paid"])} for r in rows])
+
+    @app.post("/api/drops/<int:drop_id>/toggle-paid")
+    def api_drop_toggle_paid(drop_id):
+        # 與網站 drop_toggle 相同：只翻轉 paid，不動付款日
+        db = get_db()
+        cur = db.execute("UPDATE drops SET paid = 1 - paid WHERE id = ?", (drop_id,))
+        if cur.rowcount == 0:
+            db.rollback()
+            return jsonify(ok=False, error="not found"), 404
+        db.commit()
+        row = db.execute("SELECT paid FROM drops WHERE id = ?", (drop_id,)).fetchone()
+        return jsonify(ok=True, paid=bool(row["paid"]))
 
     conn = sqlite3.connect(app.config["DB_PATH"])
     conn.executescript(SCHEMA)

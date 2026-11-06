@@ -4,6 +4,9 @@
 
 mod calc;
 mod db;
+mod source;
+
+use source::Source;
 
 use calc::{Holder, Person};
 use db::{Drop, Run};
@@ -12,7 +15,6 @@ use gpui::{
     FontWeight, SharedString, Stateful, Window, WindowBounds, WindowOptions,
 };
 use std::collections::HashSet;
-use std::path::PathBuf;
 
 const BG: u32 = 0xe4e4e1;
 const PANEL: u32 = 0xf5f5f2;
@@ -33,7 +35,7 @@ enum Tab {
 }
 
 struct Desktop {
-    db_path: PathBuf,
+    source: Source,
     tab: Tab,
     runs: Vec<Run>,
     drops: Vec<Drop>,
@@ -44,9 +46,9 @@ struct Desktop {
 }
 
 impl Desktop {
-    fn new(db_path: PathBuf) -> Self {
+    fn new(source: Source) -> Self {
         let mut app = Desktop {
-            db_path,
+            source,
             tab: Tab::Overview,
             runs: Vec::new(),
             drops: Vec::new(),
@@ -60,34 +62,22 @@ impl Desktop {
     }
 
     fn reload(&mut self) {
-        let result = db::open(&self.db_path).and_then(|conn| {
-            Ok((
-                db::runs(&conn)?,
-                db::drops(&conn)?,
-                db::percent(&conn, "payout_fee_percent", 3.0),
-                db::percent(&conn, "payout_share_percent", 50.0),
-            ))
-        });
-        match result {
-            Ok((runs, drops, fee, share)) => {
-                self.runs = runs;
-                self.drops = drops;
-                self.fee = fee;
-                self.share = share;
+        match self.source.load() {
+            Ok(snap) => {
+                self.runs = snap.runs;
+                self.drops = snap.drops;
+                self.fee = snap.fee;
+                self.share = snap.share;
             }
             Err(e) => {
-                self.notice = Some((
-                    format!("無法開啟資料庫：{} （{e}）", self.db_path.display()),
-                    true,
-                ))
+                self.notice = Some((format!("無法讀取資料（{}）：{e}", self.source.describe()), true))
             }
         }
     }
 
     fn toggle_paid(&mut self, id: i64) {
-        let result = db::open(&self.db_path).and_then(|conn| db::toggle_paid(&conn, id));
-        match result {
-            Ok(_) => {
+        match self.source.toggle_paid(id) {
+            Ok(()) => {
                 self.reload();
                 self.notice = Some(("付款狀態已更新".into(), false));
             }
@@ -580,20 +570,19 @@ impl Render for Desktop {
 }
 
 fn main() {
-    let db_path = std::env::args()
-        .nth(1)
-        .or_else(|| std::env::var("RMS_DB").ok())
-        .unwrap_or_else(|| "rms_loot.db".to_string());
-    let db_path = PathBuf::from(db_path);
+    let source = Source::from_env(std::env::args().nth(1));
+    // Source 不是 Clone，視窗只會建立一次，用 Option 把它搬進 closure。
+    let mut source = Some(source);
 
     Application::new().run(move |cx: &mut App| {
         let bounds = Bounds::centered(None, size(px(1120.), px(780.)), cx);
+        let source = source.take().expect("window is opened once");
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 ..Default::default()
             },
-            move |_, cx| cx.new(|_| Desktop::new(db_path.clone())),
+            move |_, cx| cx.new(|_| Desktop::new(source)),
         )
         .unwrap();
         cx.activate(true);

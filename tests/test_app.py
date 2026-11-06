@@ -498,3 +498,72 @@ def test_overview_shows_total_payout_with_currency(loaded, app):
     page = app.test_client().get("/").get_data(as_text=True)
     assert "本次應付合計" in page
     assert "108.64 <small>楓幣</small>" in page  # 範例資料 KIA：224 × 97% × 50%
+
+
+# ---- 唯讀 API（給桌面版用）------------------------------------------------
+
+API_TOKEN = "test-api-token"
+
+
+@pytest.fixture
+def api_app(tmp_path, monkeypatch):
+    monkeypatch.setenv("RMS_API_TOKEN", API_TOKEN)
+    for k in ("APP_PASSWORD", "RMS_REQUIRE_AUTH"):
+        monkeypatch.delenv(k, raising=False)
+    app = create_app(tmp_path / "api.db")
+    db = connect(app)
+    import_runs(db, (SAMPLE / "runs.csv").read_text(encoding="utf-8"))
+    import_drops(db, (SAMPLE / "drops.csv").read_text(encoding="utf-8"))
+    db.commit()
+    db.close()
+    return app
+
+
+def _bearer(token=API_TOKEN):
+    return {"Authorization": f"Bearer {token}"}
+
+
+def test_api_is_off_without_token(app):
+    assert app.test_client().get("/api/runs").status_code == 404
+
+
+def test_api_rejects_missing_or_wrong_token(api_app):
+    client = api_app.test_client()
+    assert client.get("/api/runs").status_code == 401
+    assert client.get("/api/runs", headers=_bearer("nope")).status_code == 401
+    assert client.get("/api/runs", headers={"Authorization": API_TOKEN}).status_code == 401
+
+
+def test_api_returns_runs_drops_and_settings(api_app):
+    client = api_app.test_client()
+    runs = client.get("/api/runs", headers=_bearer()).get_json()
+    drops = client.get("/api/drops", headers=_bearer()).get_json()
+    settings = client.get("/api/settings", headers=_bearer()).get_json()
+    assert len(runs) == 11
+    assert len(drops) == 19
+    assert set(runs[0]) == {"id", "run_date", "partner", "is_guest", "a_pick", "b_pick",
+                            "c_pick", "tape_pick", "note"}
+    assert isinstance(runs[0]["is_guest"], bool)
+    assert isinstance(drops[0]["paid"], bool)
+    assert settings == {"fee_percent": 3.0, "share_percent": 50.0}
+
+
+def test_api_toggle_paid_flips_and_reports_state(api_app):
+    client = api_app.test_client()
+    drop_id = client.get("/api/drops", headers=_bearer()).get_json()[0]["id"]
+    first = client.post(f"/api/drops/{drop_id}/toggle-paid", headers=_bearer()).get_json()
+    second = client.post(f"/api/drops/{drop_id}/toggle-paid", headers=_bearer()).get_json()
+    assert first["paid"] != second["paid"]
+    assert client.post("/api/drops/999999/toggle-paid", headers=_bearer()).status_code == 404
+
+
+def test_api_ignores_discord_login(tmp_path, monkeypatch):
+    for k, v in DISCORD_ENV.items():
+        monkeypatch.setenv(k, v)
+    monkeypatch.setenv("RMS_SECRET_KEY", "fixed-secret")
+    monkeypatch.setenv("RMS_API_TOKEN", API_TOKEN)
+    app = create_app(tmp_path / "api-discord.db")
+    client = app.test_client()
+    # 沒登入也能用 token 讀取；網頁仍然要求登入
+    assert client.get("/api/runs", headers=_bearer()).status_code == 200
+    assert client.get("/runs").status_code == 302
