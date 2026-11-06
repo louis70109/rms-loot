@@ -1,0 +1,12 @@
+[package]
+name = "rms-loot-desktop"
+version = "0.1.0"
+edition = "2021"
+description = "RMS 分贓表桌面版（GPUI），讀寫與網站相同的 SQLite 檔"
+
+[dependencies]
+gpui = "0.2.2"
+rusqlite = { version = "0.32", features = ["bundled"] }
+ureq = { version = "2.10", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
