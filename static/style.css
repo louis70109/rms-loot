@@ -287,3 +287,9 @@ td.center input[type="checkbox"] { width: 16px; height: 16px; }
 .storage-dialog p { margin: 0 0 10px; }
 .storage-dialog .muted { color: var(--muted); font-size: 13px; }
 .storage-actions { margin: 16px 0 0; text-align: right; }
+
+/* 借還紀錄的圖片縮圖 */
+.loan-thumb { width: 96px; height: 96px; object-fit: cover; border: 1px solid var(--line); display: block; }
+.loan-thumbs { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.loan-thumbs figure { margin: 0; }
+.loan-thumbs figure form { margin-top: 6px; }

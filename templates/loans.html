@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}借還紀錄{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h2>借還紀錄（{{ loans|length }} 筆）</h2>
+  {% if can_edit %}<a class="btn" href="{{ url_for('loan_new') }}">＋ 新增借還</a>{% endif %}
+</div>
+<p class="hint">
+  <a href="{{ url_for('loans_list') }}" {% if direction == 'all' %}aria-current="page"{% endif %}>全部</a>
+  {% for key, label in directions.items() %}
+    · <a href="{{ url_for('loans_list', direction=key) }}" {% if direction == key %}aria-current="page"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</p>
+<div class="table-wrap">
+  <table class="grid">
+    <thead>
+      <tr><th>方向</th><th>對象</th><th>裝備</th><th>數量</th><th>日期</th><th>狀態</th><th>圖片</th></tr>
+    </thead>
+    <tbody>
+      {% for l in loans %}
+        <tr>
+          <td>{{ directions[l.direction] }}</td>
+          <td>{{ l.counterpart }}</td>
+          <td>
+            {% if can_edit %}<a href="{{ url_for('loan_edit', loan_id=l.id) }}">{{ l.item }}</a>{% else %}{{ l.item }}{% endif %}
+            {% if l.note %}<div class="muted">{{ l.note }}</div>{% endif %}
+          </td>
+          <td>{{ l.quantity }}</td>
+          <td>{{ l.loan_date }}</td>
+          <td>{% if l.returned %}已歸還 {{ l.returned_date }}{% else %}未歸還{% endif %}</td>
+          <td>
+            {% for img in images.get(l.id, []) %}
+              <a href="{{ url_for('uploaded_file', filename=img.filename) }}" target="_blank" rel="noopener"><img class="loan-thumb" src="{{ url_for('uploaded_file', filename=img.filename) }}" alt="{{ l.item }}" loading="lazy"></a>
+            {% endfor %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="muted">還沒有借還紀錄</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

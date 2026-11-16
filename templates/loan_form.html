@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h2>{{ title }}</h2>
+{% if errors %}
+  <div class="flash error">{% for e in errors %}<div>{{ e }}</div>{% endfor %}</div>
+{% endif %}
+<form method="post" action="{{ action }}" class="card form" enctype="multipart/form-data">
+  <div class="grid2">
+    <label>方向
+      <select name="direction">
+        {% for key, label in directions.items() %}
+          <option value="{{ key }}" {% if data.direction == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>對象（人名）
+      <input name="counterpart" list="names" value="{{ data.counterpart }}">
+    </label>
+  </div>
+  <div class="grid2">
+    <label>裝備名稱
+      <input name="item" value="{{ data.item }}" required>
+    </label>
+    <label>數量
+      <input name="quantity" inputmode="numeric" value="{{ data.quantity }}">
+    </label>
+  </div>
+  <div class="grid2">
+    <label>借出／借入日期
+      <input type="date" name="loan_date" value="{{ data.loan_date }}">
+    </label>
+    <label class="check align-end">
+      <input type="checkbox" name="returned" value="1" {% if data.returned %}checked{% endif %}>
+      已歸還
+    </label>
+  </div>
+  <div class="grid2">
+    <label>歸還日期
+      <input type="date" name="returned_date" value="{{ data.returned_date }}">
+    </label>
+  </div>
+  <label>備註
+    <textarea name="note" rows="2">{{ data.note }}</textarea>
+  </label>
+  {% if not loan_id %}
+    <label>圖片（可多選；會自動壓縮，不選也可以）
+      <input type="file" name="files" accept="image/*" multiple>
+    </label>
+  {% endif %}
+  <datalist id="names">
+    {% for n in names %}<option value="{{ n }}"></option>{% endfor %}
+  </datalist>
+  <div class="actions-row">
+    <button class="btn">儲存</button>
+    <a href="{{ url_for('loans_list') }}">取消</a>
+  </div>
+</form>
+
+{% if loan_id %}
+<section class="card">
+  <h2>圖片（{{ images|length }} 張）</h2>
+  {% if images %}
+    <div class="loan-thumbs">
+      {% for img in images %}
+        <figure>
+          <a href="{{ url_for('uploaded_file', filename=img.filename) }}" target="_blank" rel="noopener">
+            <img class="loan-thumb" src="{{ url_for('uploaded_file', filename=img.filename) }}" alt="圖片 {{ loop.index }}" loading="lazy">
+          </a>
+          <form method="post" action="{{ url_for('loan_image_delete', image_id=img.id) }}"
+                onsubmit="return confirm('確定刪除這張圖片？')">
+            <button class="btn">刪除圖片</button>
+          </form>
+        </figure>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">還沒有圖片</p>
+  {% endif %}
+  <form method="post" action="{{ url_for('loan_images_add', loan_id=loan_id) }}" enctype="multipart/form-data" class="actions-row">
+    <input type="file" name="files" accept="image/*" multiple>
+    <button class="btn">上傳圖片</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>刪除</h2>
+  <p class="muted">刪除紀錄會連同所有圖片一起刪除，無法復原。</p>
+  <form method="post" action="{{ url_for('loan_delete', loan_id=loan_id) }}"
+        onsubmit="return confirm('確定刪除整筆借還紀錄與所有圖片？')">
+    <button class="btn">刪除這筆紀錄</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}
