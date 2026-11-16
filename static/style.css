@@ -270,3 +270,20 @@ td.center input[type="checkbox"] { width: 16px; height: 16px; }
 }
 
 .grand-total small, .pay-amount small { font: 600 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .08em; margin-left: 4px; }
+
+/* 儲存空間警告視窗（見 docs/adr/0001-storage-space-warning.md） */
+.storage-dialog {
+  width: min(420px, 92vw);
+  padding: 24px;
+  background: var(--panel);
+  color: var(--fg);
+  border: 2px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+}
+.storage-dialog::backdrop { background: rgba(0, 0, 0, .55); }
+.storage-dialog h2 { margin: 0 0 12px; font-size: 16px; color: var(--warn); }
+.storage-dialog.critical h2 { color: var(--danger); }
+.storage-dialog p { margin: 0 0 10px; }
+.storage-dialog .muted { color: var(--muted); font-size: 13px; }
+.storage-actions { margin: 16px 0 0; text-align: right; }
