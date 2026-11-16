@@ -26,6 +26,7 @@ import json
 import urllib.parse
 import urllib.request
 
+from loans import LOAN_SCHEMA, register_loans
 from storage import storage_status
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -501,7 +502,8 @@ def create_app(db_path=None):
             if role == "owner":
                 return None
             if role == "member":
-                if request.method == "GET" and request.path in ("/", "/drops"):
+                if request.method == "GET" and (request.path in ("/", "/drops", "/loans")
+                                                or request.path.startswith("/uploads/")):
                     return None
                 if request.method == "POST" and re.fullmatch(r"/drops/\d+/edit", request.path):
                     return None  # 權限在 drop_edit 裡逐筆檢查
@@ -607,7 +609,7 @@ def create_app(db_path=None):
         return "ok"
 
     conn = sqlite3.connect(app.config["DB_PATH"])
-    conn.executescript(SCHEMA)
+    conn.executescript(SCHEMA + LOAN_SCHEMA)
     # 舊資料庫補上 paid_date 欄位（CREATE TABLE IF NOT EXISTS 不會改既有的表）
     if "paid_date" not in {r[1] for r in conn.execute("PRAGMA table_info(drops)")}:
         conn.execute("ALTER TABLE drops ADD COLUMN paid_date TEXT NOT NULL DEFAULT ''")
@@ -858,6 +860,7 @@ def create_app(db_path=None):
     def import_drops_view():
         return run_import(import_drops, "件掉落物")
 
+    register_loans(app, get_db, known_names)
     return app
 
 
