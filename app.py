@@ -26,6 +26,8 @@ import json
 import urllib.parse
 import urllib.request
 
+from storage import storage_status
+
 BASE_DIR = Path(__file__).resolve().parent
 ME = "NJ"  # 分贓紀錄裡代表自己的名字
 SLOTS = (("a_pick", "A捲"), ("b_pick", "B捲"), ("c_pick", "C捲"), ("tape_pick", "tape"))
@@ -474,6 +476,13 @@ def create_app(db_path=None):
     def inject_auth():
         """導覽列用：目前登入的身分（沒有 Discord 登入時為空）。"""
         return {"auth_name": session.get("name", ""), "auth_role": session.get("role", "")}
+
+    @app.context_processor
+    def inject_storage():
+        """空間快滿時給全站的警告視窗用（見 docs/adr/0001-storage-space-warning.md）。"""
+        data_dir = os.path.dirname(os.path.abspath(app.config["DB_PATH"]))
+        return {"storage_warning": storage_status(data_dir)}
+
     app.jinja_env.filters["money"] = lambda v: "" if v is None else f"{v:g}"
 
     # 密碼閘門：設了 APP_PASSWORD 就要 HTTP Basic 登入（帳號隨意，只驗密碼）。

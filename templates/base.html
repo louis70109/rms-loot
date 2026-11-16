@@ -34,6 +34,34 @@
     {% block content %}{% endblock %}
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  {% if storage_warning %}
+    {% set critical = storage_warning.level == 'critical' %}
+    <dialog id="storage-warning" class="storage-dialog {{ storage_warning.level }}"
+            data-level="{{ storage_warning.level }}" aria-labelledby="storage-warning-title">
+      <h2 id="storage-warning-title">{{ '空間即將用完' if critical else '儲存空間快滿' }}</h2>
+      <p>資料所在的儲存空間已使用 <strong>{{ storage_warning.percent }}%</strong>
+        （{{ storage_warning.used_mb }} / {{ storage_warning.total_mb }} MB）。</p>
+      <p class="muted">{{ '空間不足時寫入可能失敗，請盡快清理或擴充 volume。' if critical
+                          else '請留意剩餘空間，必要時清理或擴充 volume。' }}</p>
+      <form method="dialog" class="storage-actions">
+        <button class="btn">我知道了</button>
+      </form>
+    </dialog>
+    <script>
+      (function () {
+        var d = document.getElementById('storage-warning');
+        if (!d) return;
+        var key = 'storage-dismissed-' + d.getAttribute('data-level');
+        // 同一個分頁關閉前只跳一次；sessionStorage 不可用時就每次都跳
+        try { if (sessionStorage.getItem(key) === '1') return; } catch (e) {}
+        d.addEventListener('close', function () {
+          try { sessionStorage.setItem(key, '1'); } catch (e) {}
+        });
+        if (typeof d.showModal === 'function') d.showModal();
+        else d.setAttribute('open', '');
+      })();
+    </script>
+  {% endif %}
   <script src="{{ url_for('static', filename='table.js') }}" defer></script>
 </body>
 </html>
