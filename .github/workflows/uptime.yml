@@ -1,11 +1,11 @@
 name: Uptime check
 
-# 每小時檢查正式站 /healthz。失敗時這次執行會變紅，GitHub 會寄通知給 repo 的 watcher。
+# 每 12 小時（UTC 00:17、12:17）檢查正式站 /healthz。失敗時這次執行會變紅，GitHub 會寄通知給 repo 的 watcher。
 # 機器閒置會自動休眠，所以第一次請求可能要等很久，腳本會重試幾次再判定失敗。
 
 on:
   schedule:
-    - cron: "17 * * * *"
+    - cron: "17 0,12 * * *"
   workflow_dispatch:
 
 permissions:
