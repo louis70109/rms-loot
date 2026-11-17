@@ -1,0 +1,33 @@
+name: Uptime check
+
+# 每小時檢查正式站 /healthz。失敗時這次執行會變紅，GitHub 會寄通知給 repo 的 watcher。
+# 機器閒置會自動休眠，所以第一次請求可能要等很久，腳本會重試幾次再判定失敗。
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  healthz:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check /healthz
+        env:
+          URL: https://rms-loot-nj.fly.dev/healthz
+        run: |
+          for attempt in 1 2 3 4; do
+            code=$(curl -s -o body.txt -w "%{http_code}" --max-time 90 "$URL" || true)
+            body=$(cat body.txt 2>/dev/null || true)
+            echo "attempt $attempt: HTTP $code, body=$body"
+            if [ "$code" = "200" ] && [ "$body" = "ok" ]; then
+              echo "healthy"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "::error::rms-loot-nj /healthz 連續失敗。請檢查 fly 機器狀態與最近的 deploy。"
+          exit 1
