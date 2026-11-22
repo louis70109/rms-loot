@@ -41,5 +41,6 @@
 
 ## 相關紀錄
 
+- 其他改動（頁面的實作細節、測試結果、版本演進）不寫在 ADR 裡，請看 commit 紀錄：本 ADR 的 commit `c8ba17a` 與 PR #34。
 - Artifact（私人）：https://claude.ai/artifact/7xZb85grLcjTEEoRBjEYTc
 - 攻略庫目錄：https://rms-data.fly.dev/index.json
