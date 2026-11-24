@@ -502,7 +502,7 @@ def create_app(db_path=None):
             if role == "owner":
                 return None
             if role == "member":
-                if request.method == "GET" and (request.path in ("/", "/drops", "/loans")
+                if request.method == "GET" and (request.path in ("/", "/drops", "/loans", "/todo")
                                                 or request.path.startswith("/uploads/")):
                     return None
                 if request.method == "POST" and re.fullmatch(r"/drops/\d+/edit", request.path):
@@ -859,6 +859,11 @@ def create_app(db_path=None):
     @app.post("/import/drops")
     def import_drops_view():
         return run_import(import_drops, "件掉落物")
+
+    # TODO 頁面：純前端，資料只存在使用者自己的瀏覽器（見 docs/adr/0009-todo-in-site.md）
+    @app.get("/todo")
+    def todo_page():
+        return render_template("todo.html")
 
     register_loans(app, get_db, known_names)
     return app

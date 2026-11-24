@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}TODO{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='todo.css') }}">
+<div class="todo"
+     data-todo-root
+     data-guide-url="https://rms-data.fly.dev/"
+     data-snapshot-url="{{ url_for('static', filename='guide-index-snapshot.json') }}">
+
+  <div class="page-head">
+    <h2>Maple Royals TODO</h2>
+  </div>
+  <p class="hint">勾選完成的項目，每個項目可以加備註，並連到攻略庫的頁面。資料只存在這個瀏覽器裡，不會上傳到伺服器。</p>
+
+  <div class="card todo-guide">
+    <span>任務內容請到攻略庫查，這裡記進度與筆記。</span>
+    <a class="btn" href="https://rms-data.fly.dev/" target="_blank" rel="noopener">開攻略庫</a>
+  </div>
+
+  <div class="card" data-group="level">
+    <div class="todo-head">
+      <h2>練腳色</h2>
+      <span class="muted" data-count></span>
+    </div>
+    <form class="todo-add" data-form>
+      <input name="text" placeholder="例如：A 角練到 Lv.xx" maxlength="120" autocomplete="off" aria-label="新增練腳色項目">
+      <button>新增</button>
+    </form>
+    <ul class="todo-list" data-list></ul>
+    <div class="todo-toolbar"><button type="button" class="link" data-clear>清除已完成</button></div>
+  </div>
+
+  <div class="card" data-group="quest">
+    <div class="todo-head">
+      <h2>解任務</h2>
+      <span class="muted" data-count></span>
+    </div>
+    <form class="todo-add" data-form>
+      <input name="text" placeholder="例如：某某任務第一階段" maxlength="120" autocomplete="off" aria-label="新增解任務項目">
+      <button>新增</button>
+    </form>
+    <ul class="todo-list" data-list></ul>
+    <div class="todo-toolbar"><button type="button" class="link" data-clear>清除已完成</button></div>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='todo.js') }}" defer></script>
+{% endblock %}
