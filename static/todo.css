@@ -1,0 +1,25 @@
+/* TODO 頁面的樣式，全部限定在 .todo 底下，不影響其他頁面（見 templates/todo.html）。 */
+.todo .todo-guide { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; }
+.todo .todo-guide a.btn { text-decoration: none; }
+.todo .todo-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.todo .todo-head h2 { margin: 0 0 8px; }
+.todo .todo-add { display: flex; gap: 8px; margin: 10px 0 4px; }
+.todo .todo-add input { flex: 1; min-width: 0; }
+.todo .todo-list { list-style: none; margin: 0; padding: 0; }
+.todo .item { border-top: 1px solid var(--line-soft); padding: 8px 0; }
+.todo .item:first-child { border-top: 0; }
+.todo .row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.todo .row input[type="checkbox"] { width: 18px; height: 18px; flex: 0 0 auto; }
+.todo .row label { flex: 1; min-width: 0; cursor: pointer; word-break: break-word; font-size: 15px; }
+.todo .item.done .row label { color: var(--muted); text-decoration: line-through; }
+.todo .row a.ext { color: var(--accent); text-decoration: none; font-size: 14px; padding: 0 4px; }
+.todo .row button.icon { background: none; border: 0; color: var(--muted); padding: 0 4px; font-size: 16px; cursor: pointer; box-shadow: none; }
+.todo .row button.icon:hover { color: var(--danger); background: none; }
+.todo .row button.icon[aria-expanded="true"] { color: var(--accent); }
+.todo .detail { margin: 10px 0 0 28px; display: grid; gap: 8px; }
+.todo .detail label { font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+.todo .detail textarea { min-height: 64px; resize: vertical; width: 100%; font: inherit; font-size: 14px; }
+.todo .detail input, .todo .detail select { width: 100%; font: inherit; font-size: 14px; }
+.todo .empty { color: var(--muted); font-size: 14px; padding: 8px 0; list-style: none; }
+.todo .warn { font-size: 12px; color: var(--danger); margin: 0; min-height: 1em; }
+.todo .todo-toolbar { display: flex; justify-content: flex-end; margin-top: 8px; }

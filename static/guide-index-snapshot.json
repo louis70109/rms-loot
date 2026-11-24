@@ -1,0 +1,291 @@
+{
+ "date": "2026-11-24",
+ "source": "https://rms-data.fly.dev/index.json",
+ "entries": [
+  {
+   "slug": "babywell",
+   "title": "乖寶寶題庫（Safe Adventures 題庫）",
+   "cat": "新手入門"
+  },
+  {
+   "slug": "static-commands",
+   "title": "遊戲玩家可以用的指令整理",
+   "cat": "新手入門"
+  },
+  {
+   "slug": "static-pc-setup",
+   "title": "遊戲電腦設定注意事項",
+   "cat": "新手入門"
+  },
+  {
+   "slug": "static-exp-sets",
+   "title": "lvl 10 升級所需經驗與 ETC 組數",
+   "cat": "練功與升級"
+  },
+  {
+   "slug": "leech-guide",
+   "title": "LEECH 練功地點（依等級）",
+   "cat": "練功與升級"
+  },
+  {
+   "slug": "static-magic-tma",
+   "title": "各技能一刀解怪所需的魔法攻擊力（TMA）",
+   "cat": "練功與升級"
+  },
+  {
+   "slug": "job-2nd",
+   "title": "二轉流程",
+   "cat": "轉職與技能前置"
+  },
+  {
+   "slug": "job-3rd",
+   "title": "三轉流程",
+   "cat": "轉職與技能前置"
+  },
+  {
+   "slug": "job-4th",
+   "title": "四轉流程",
+   "cat": "轉職與技能前置"
+  },
+  {
+   "slug": "forum-en-jobs-supp",
+   "title": "轉職補充（New Source 新版）",
+   "cat": "轉職與技能前置"
+  },
+  {
+   "slug": "pre-warrior",
+   "title": "技能前置任務－戰士",
+   "cat": "轉職與技能前置"
+  },
+  {
+   "slug": "pre-magician",
+   "title": "技能前置任務－法師",
+   "cat": "轉職與技能前置"
+  },
+  {
+   "slug": "pre-bowman",
+   "title": "技能前置任務－弓箭手",
+   "cat": "轉職與技能前置"
+  },
+  {
+   "slug": "pre-thief",
+   "title": "技能前置任務－盜賊",
+   "cat": "轉職與技能前置"
+  },
+  {
+   "slug": "pre-pirate",
+   "title": "技能前置任務－海盜",
+   "cat": "轉職與技能前置"
+  },
+  {
+   "slug": "skill-all",
+   "title": "全職業共通",
+   "cat": "技能書"
+  },
+  {
+   "slug": "skill-warrior",
+   "title": "劍士",
+   "cat": "技能書"
+  },
+  {
+   "slug": "skill-magician",
+   "title": "法師",
+   "cat": "技能書"
+  },
+  {
+   "slug": "skill-bowman",
+   "title": "弓箭手",
+   "cat": "技能書"
+  },
+  {
+   "slug": "skill-thief",
+   "title": "盜賊",
+   "cat": "技能書"
+  },
+  {
+   "slug": "skill-pirate",
+   "title": "海盜",
+   "cat": "技能書"
+  },
+  {
+   "slug": "forum-en-skill-supp",
+   "title": "四轉技能補充（站內沒有的 28 個）",
+   "cat": "技能書"
+  },
+  {
+   "slug": "static-unwashed-hp",
+   "title": "不洗點也能玩：HP 洗點在 2024 還需要嗎？（中文整理）",
+   "cat": "加血與洗血"
+  },
+  {
+   "slug": "static-mage-hp-wash",
+   "title": "法師洗血教學（玩家分享）",
+   "cat": "加血與洗血"
+  },
+  {
+   "slug": "static-spring-of-youth",
+   "title": "青春之泉（Water from the Spring of Youth）任務攻略",
+   "cat": "加血與洗血"
+  },
+  {
+   "slug": "static-alcaster-quest",
+   "title": "Alcaster 任務鏈攻略（論壇摘要）",
+   "cat": "轉職與技能前置"
+  },
+  {
+   "slug": "static-elixir-guide",
+   "title": "Elixir of Life：Reuel HP 任務重點整理（120 等以上）",
+   "cat": "加血與洗血"
+  },
+  {
+   "slug": "static-olaf-assignment",
+   "title": "冒險者的任務（Olaf Quest）",
+   "cat": "加血與洗血"
+  },
+  {
+   "slug": "pre-overview",
+   "title": "前置任務（總覽）",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "forum-en-bosses",
+   "title": "區域 BOSS 一覽（重生時間）",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "static-pinkbean-prep",
+   "title": "皮卡啾（Pink Bean）前置與需求（官方公告中文整理）",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "static-vl-lion-castle",
+   "title": "VL 獅子王城小教室",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-zakum",
+   "title": "殘暴炎魔（Zakum）前置",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-zakjump",
+   "title": "炎魔忍耐替代任務",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-ht",
+   "title": "闇黑龍王（Horntail）前置",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-toad",
+   "title": "天皇蟾蜍前置",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-bell",
+   "title": "鐘王前置介紹",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-tree",
+   "title": "樹王前置介紹",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-captain",
+   "title": "船長前置介紹",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-bear",
+   "title": "熊獅前置介紹",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-monk",
+   "title": "妖僧前置介紹",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-lkc",
+   "title": "獅子王城前置",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-cwkpq",
+   "title": "CWKPQ 前置介紹",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-epq",
+   "title": "艾靈森林前置（EPQ）",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-tot",
+   "title": "時間神殿前置介紹",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-tokyo",
+   "title": "東京前置介紹",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-lhc",
+   "title": "LHC 圖騰交換前置任務",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "pre-bpq",
+   "title": "魔王巴洛谷前置任務（BPQ）",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "forum-apq-comp",
+   "title": "APQ 完整攻略（2021 更新）",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "forum-apq-bonus",
+   "title": "APQ Bonus 全箱攻略（Elie 地圖）",
+   "cat": "BOSS 與副本"
+  },
+  {
+   "slug": "items-itcg",
+   "title": "iTCG 裝備製作",
+   "cat": "裝備與生活"
+  },
+  {
+   "slug": "static-zhelm-guide",
+   "title": "購買炎魔頭盔（Zhelm）指南（中文整理）",
+   "cat": "裝備與生活"
+  },
+  {
+   "slug": "pre-marry",
+   "title": "結婚手冊",
+   "cat": "裝備與生活"
+  },
+  {
+   "slug": "pre-pet-ride",
+   "title": "寵物任務－騎寵任務",
+   "cat": "裝備與生活"
+  },
+  {
+   "slug": "npc-gallery",
+   "title": "NPC 圖鑑（攻略中出現的 NPC）",
+   "cat": "查詢與工具"
+  },
+  {
+   "slug": "tool-quiz-ocr",
+   "title": "乖寶寶題目：截圖找答案",
+   "cat": "查詢與工具"
+  },
+  {
+   "slug": "tool-hpquest-ocr",
+   "title": "HP 任務：截圖查怪物",
+   "cat": "查詢與工具"
+  }
+ ]
+}
