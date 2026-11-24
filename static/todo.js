@@ -1,45 +1,100 @@
-// TODO 頁面：項目只存在這個瀏覽器的 localStorage，不寫入伺服器。
+// TODO 頁面：資料存在伺服器的資料庫，依登入者分開（見 todo.py 與 docs/adr/0010-todo-in-database.md）。
 // 攻略目錄的順序：即時抓取 → 上次的快取 → 內建快照（static/guide-index-snapshot.json）。
 (function () {
   var root = document.querySelector("[data-todo-root]");
   if (!root) return;
 
-  var KEY = "maple-royals-todo-v3";
+  var API = root.getAttribute("data-api-url") || "/api/todos";
+  var LEGACY_KEY = "maple-royals-todo-v3";  // 舊版存在瀏覽器裡的資料，第一次開頁時搬進資料庫
   var INDEX_CACHE_KEY = "maple-royals-guide-index-v1";
   var GUIDE = root.getAttribute("data-guide-url") || "https://rms-data.fly.dev/";
   var INDEX_URL = GUIDE + "index.json";
   var SNAPSHOT_URL = root.getAttribute("data-snapshot-url");
   var GROUPS = ["level", "quest"];
-  var openIds = {}; // 只在目前頁面記住哪些項目展開
+  var openIds = {};   // 只在目前頁面記住哪些項目展開
+  var statusEl = root.querySelector("[data-status]");
 
   // indexStatus: loading | live | cached | snapshot | unavailable
   var guideIndex = null;
   var indexStatus = "loading";
   var snapshotDate = "";
 
-  function emptyData() { return { level: [], quest: [] }; }
+  var data = { level: [], quest: [] };
+  var loaded = false;
 
-  function load() {
+  // ---- 狀態列與 API ---------------------------------------------------------
+
+  function say(msg, isError) {
+    if (!statusEl) return;
+    statusEl.textContent = msg || "";
+    statusEl.className = "todo-status" + (isError ? " error" : "");
+  }
+
+  function api(method, url, body) {
+    var opts = { method: method, credentials: "same-origin", headers: {} };
+    if (body !== undefined) {
+      opts.headers["Content-Type"] = "application/json";
+      opts.body = JSON.stringify(body);
+    }
+    return fetch(url, opts).then(function (r) {
+      return r.json().catch(function () { return null; }).then(function (j) {
+        if (!r.ok) {
+          var err = new Error((j && j.error) || ("HTTP " + r.status));
+          err.status = r.status;
+          throw err;
+        }
+        return j;
+      });
+    });
+  }
+
+  function failed(e) {
+    if (e && e.status === 401) say("請先登入 Discord 才能使用 TODO。", true);
+    else say("儲存失敗：" + (e && e.message ? e.message : "未知錯誤") + "。畫面已還原。", true);
+  }
+
+  // ---- 載入與舊資料搬移 ----------------------------------------------------
+
+  function legacyItems() {
     try {
-      var raw = localStorage.getItem(KEY);
-      var data = raw ? JSON.parse(raw) : null;
-      if (data && GROUPS.every(function (g) { return Array.isArray(data[g]); })) {
-        GROUPS.forEach(function (g) {
-          data[g].forEach(function (i) {
-            i.note = i.note || "";
-            i.link = i.link || "";
-            i.slug = i.slug || "";
-          });
-        });
-        return data;
+      var raw = localStorage.getItem(LEGACY_KEY);
+      var old = raw ? JSON.parse(raw) : null;
+      if (old && GROUPS.every(function (g) { return Array.isArray(old[g]); })) {
+        var total = old.level.length + old.quest.length;
+        if (total > 0) return old;
       }
     } catch (e) {}
-    return emptyData();
+    return null;
   }
 
-  function save(data) {
-    try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
+  function fetchList() {
+    return api("GET", API).then(function (list) {
+      data = { level: list.level || [], quest: list.quest || [] };
+      loaded = true;
+    });
   }
+
+  function load() {
+    say("正在載入…");
+    fetchList().then(function () {
+      var old = legacyItems();
+      if (old && data.level.length === 0 && data.quest.length === 0) {
+        return api("POST", API + "/import", old).then(function () {
+          try { localStorage.removeItem(LEGACY_KEY); } catch (e) {}
+          say("已把這個瀏覽器的舊清單搬進資料庫。");
+          return fetchList();
+        });
+      }
+    }).then(function () {
+      say("");
+      render();
+    }).catch(function (e) {
+      failed(e);
+      render();
+    });
+  }
+
+  // ---- 攻略目錄 -------------------------------------------------------------
 
   function isValidIndex(list) {
     return Array.isArray(list) && list.every(function (x) {
@@ -85,6 +140,8 @@
       .then(function () { render(); });
   }
 
+  // ---- 轉換與工具 -----------------------------------------------------------
+
   // 只接受 http / https 連結，避免 javascript: 之類的網址
   function safeLink(url) {
     return /^https?:\/\/\S+$/i.test(url || "") ? url : "";
@@ -102,12 +159,6 @@
     return hit ? hit.title : null;
   }
 
-  var data = load();
-
-  function makeId() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  }
-
   function el(tag, cls, text) {
     var node = document.createElement(tag);
     if (cls) node.className = cls;
@@ -115,14 +166,41 @@
     return node;
   }
 
+  function findItem(group, id) {
+    return data[group].filter(function (i) { return i.id === id; })[0];
+  }
+
+  // 先改畫面，再送出；失敗就還原
+  function patch(group, item, fields) {
+    var before = {};
+    Object.keys(fields).forEach(function (k) { before[k] = item[k]; Object.assign(item, { [k]: fields[k] }); });
+    render();
+    return api("PATCH", API + "/" + item.id, fields)
+      .then(function (saved) {
+        Object.keys(saved).forEach(function (k) { item[k] = saved[k]; });
+        say("");
+        render();
+      })
+      .catch(function (e) {
+        Object.keys(before).forEach(function (k) { item[k] = before[k]; });
+        failed(e);
+        render();
+      });
+  }
+
+  // ---- 畫面 -----------------------------------------------------------------
+
   function render() {
     GROUPS.forEach(function (group) {
       var sec = root.querySelector('[data-group="' + group + '"]');
       var items = data[group];
       var list = sec.querySelector("[data-list]");
       var doneCount = items.filter(function (i) { return i.done; }).length;
-      sec.querySelector("[data-count]").textContent = doneCount + " / " + items.length + " 完成";
+      sec.querySelector("[data-count]").textContent = loaded
+        ? doneCount + " / " + items.length + " 完成"
+        : "";
       list.innerHTML = "";
+      if (!loaded) return;
       if (items.length === 0) {
         list.appendChild(el("li", "empty", "還沒有項目"));
         return;
@@ -140,14 +218,11 @@
     cb.checked = !!item.done;
     cb.id = "todo-cb-" + item.id;
     cb.addEventListener("change", function () {
-      item.done = cb.checked;
-      save(data);
-      render();
+      patch(group, item, { done: cb.checked });
     });
 
     var label = el("label", null, item.text);
     label.htmlFor = cb.id;
-
     row.appendChild(cb);
     row.appendChild(label);
 
@@ -176,28 +251,30 @@
     del.type = "button";
     del.setAttribute("aria-label", "刪除");
     del.addEventListener("click", function () {
-      data[group] = data[group].filter(function (i) { return i.id !== item.id; });
-      delete openIds[item.id];
-      save(data);
-      render();
+      api("DELETE", API + "/" + item.id).then(function () {
+        data[group] = data[group].filter(function (i) { return i.id !== item.id; });
+        delete openIds[item.id];
+        say("");
+        render();
+      }).catch(failed);
     });
     row.appendChild(del);
 
     li.appendChild(row);
-    if (isOpen) li.appendChild(renderDetail(item));
+    if (isOpen) li.appendChild(renderDetail(group, item));
     return li;
   }
 
-  function renderDetail(item) {
+  function renderDetail(group, item) {
     var detail = el("div", "detail");
 
     var noteLabel = el("label", null, "備註");
     var note = el("textarea");
     note.value = item.note;
     note.placeholder = "例如：需要的道具、進度、要找的 NPC";
-    note.addEventListener("input", function () {
-      item.note = note.value;
-      save(data);
+    // 備註在離開欄位時才儲存，避免每打一個字就送一次
+    note.addEventListener("change", function () {
+      if (note.value !== item.note) patch(group, item, { note: note.value });
     });
     noteLabel.appendChild(note);
     detail.appendChild(noteLabel);
@@ -212,8 +289,9 @@
       if (indexStatus === "cached") titleText += "（快取的目錄）";
       var pickLabel = el("label", null, titleText);
       var select = el("select");
-      select.appendChild(el("option", null, "（不連結）"));
-      select.firstChild.value = "";
+      var none = el("option", null, "（不連結）");
+      none.value = "";
+      select.appendChild(none);
 
       var byCat = {};
       guideIndex.forEach(function (x) { (byCat[x.cat] = byCat[x.cat] || []).push(x); });
@@ -236,9 +314,7 @@
       }
       select.value = item.slug;
       select.addEventListener("change", function () {
-        item.slug = select.value;
-        save(data);
-        render();
+        patch(group, item, { slug: select.value });
       });
       pickLabel.appendChild(select);
       detail.appendChild(pickLabel);
@@ -258,15 +334,16 @@
         linkInput.value = item.link;
         return;
       }
-      item.link = v;
-      save(data);
-      render();
+      warn.textContent = "";
+      if (v !== item.link) patch(group, item, { link: v });
     });
     linkLabel.appendChild(linkInput);
     detail.appendChild(linkLabel);
     detail.appendChild(warn);
     return detail;
   }
+
+  // ---- 事件 -----------------------------------------------------------------
 
   GROUPS.forEach(function (group) {
     var sec = root.querySelector('[data-group="' + group + '"]');
@@ -275,20 +352,25 @@
       var input = this.elements.text;
       var text = input.value.trim();
       if (!text) return;
-      data[group].push({ id: makeId(), text: text, done: false, note: "", link: "", slug: "" });
-      input.value = "";
-      save(data);
-      render();
-      input.focus();
+      api("POST", API, { group: group, text: text }).then(function (item) {
+        data[group].push(item);
+        input.value = "";
+        say("");
+        render();
+        input.focus();
+      }).catch(failed);
     });
     sec.querySelector("[data-clear]").addEventListener("click", function () {
-      data[group].filter(function (i) { return i.done; }).forEach(function (i) { delete openIds[i.id]; });
-      data[group] = data[group].filter(function (i) { return !i.done; });
-      save(data);
-      render();
+      api("POST", API + "/clear-done", { group: group }).then(function () {
+        data[group].filter(function (i) { return i.done; }).forEach(function (i) { delete openIds[i.id]; });
+        data[group] = data[group].filter(function (i) { return !i.done; });
+        say("");
+        render();
+      }).catch(failed);
     });
   });
 
   render();
+  load();
   loadIndex();
 })();

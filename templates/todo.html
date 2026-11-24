@@ -4,13 +4,15 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='todo.css') }}">
 <div class="todo"
      data-todo-root
+     data-api-url="{{ url_for('todos_list') }}"
      data-guide-url="https://rms-data.fly.dev/"
      data-snapshot-url="{{ url_for('static', filename='guide-index-snapshot.json') }}">
 
   <div class="page-head">
     <h2>Maple Royals TODO</h2>
   </div>
-  <p class="hint">勾選完成的項目，每個項目可以加備註，並連到攻略庫的頁面。資料只存在這個瀏覽器裡，不會上傳到伺服器。</p>
+  <p class="hint">勾選完成的項目，每個項目可以加備註，並連到攻略庫的頁面。資料存在資料庫，依你的 Discord 帳號分開，換裝置也看得到。</p>
+  <p class="todo-status" data-status role="status" aria-live="polite"></p>
 
   <div class="card todo-guide">
     <span>任務內容請到攻略庫查，這裡記進度與筆記。</span>
