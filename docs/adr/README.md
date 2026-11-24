@@ -12,7 +12,8 @@
 | [0006](0006-loan-images-on-volume.md) | 借還圖片壓縮後存在 volume，資料庫只存檔名 | 已接受 |
 | [0007](0007-uptime-check-github-actions.md) | 用 GitHub Actions 排程做網站偵測 | 已接受 |
 | [0008](0008-gpui-desktop-and-api-removed.md) | 移除 GPUI 桌面版與唯讀 API | 已接受（已移除） |
-| [0009](0009-todo-in-site.md) | TODO 放進網站，資料只存在瀏覽器 | 已接受 |
+| [0009](0009-todo-in-site.md) | TODO 放進網站，資料只存在瀏覽器 | 已被 0010 取代 |
+| [0010](0010-todo-in-database.md) | TODO 存進資料庫，依 Discord 帳號分開 | 已接受 |
 
 ## 約定
 

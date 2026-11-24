@@ -27,6 +27,7 @@ import urllib.parse
 import urllib.request
 
 from loans import LOAN_SCHEMA, register_loans
+from todo import TODO_SCHEMA, register_todo
 from storage import storage_status
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -499,6 +500,11 @@ def create_app(db_path=None):
             if request.path.startswith("/static/"):
                 return None
             role = session.get("role")
+            if request.path.startswith("/api/todos"):
+                # TODO 的資料依登入者分開，owner 與 member 都能用自己的清單；其他人回 401（不導向登入頁）
+                if role in ("owner", "member"):
+                    return None
+                return jsonify(ok=False, error="請先登入"), 401
             if role == "owner":
                 return None
             if role == "member":
@@ -609,7 +615,7 @@ def create_app(db_path=None):
         return "ok"
 
     conn = sqlite3.connect(app.config["DB_PATH"])
-    conn.executescript(SCHEMA + LOAN_SCHEMA)
+    conn.executescript(SCHEMA + LOAN_SCHEMA + TODO_SCHEMA)
     # 舊資料庫補上 paid_date 欄位（CREATE TABLE IF NOT EXISTS 不會改既有的表）
     if "paid_date" not in {r[1] for r in conn.execute("PRAGMA table_info(drops)")}:
         conn.execute("ALTER TABLE drops ADD COLUMN paid_date TEXT NOT NULL DEFAULT ''")
@@ -866,6 +872,7 @@ def create_app(db_path=None):
         return render_template("todo.html")
 
     register_loans(app, get_db, known_names)
+    register_todo(app, get_db)
     return app
 
 
