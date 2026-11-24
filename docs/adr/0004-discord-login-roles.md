@@ -17,6 +17,7 @@
 3. 權限在 `password_gate`（`before_request`）統一檢查，不在各個路由裡分散判斷。其他寫入操作對 member 回 403。
 4. 啟用條件：`DISCORD_CLIENT_ID`、`DISCORD_CLIENT_SECRET`、`DISCORD_REDIRECT_URI`、`OWNER_DISCORD_IDS` 都有才啟用；啟用時 `RMS_SECRET_KEY` 必須設定，沒有就拒絕啟動。原因是沒有固定金鑰時，每次機器重啟都會換金鑰，所有登入會失效。
 5. Session cookie 在啟用 Discord 時設為 `Secure` 與 `SameSite=Lax`。
+6. 登入狀態有效期為一天（`PERMANENT_SESSION_LIFETIME`），每次請求都會往後延，閒置一天才會登出。登入時要設定 `session.permanent = True`，否則 cookie 沒有過期時間，瀏覽器或手機關掉後就會被清除。
 
 ## 踩過的坑（之後要記得）
 

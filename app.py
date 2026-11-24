@@ -17,7 +17,7 @@ import re
 import secrets
 import sqlite3
 import tempfile
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from flask import (Flask, Response, abort, flash, g, jsonify, redirect, render_template, request,
@@ -472,6 +472,9 @@ def create_app(db_path=None):
     if app.config["DISCORD_ON"]:
         app.config["SESSION_COOKIE_SECURE"] = True
         app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+        # 登入狀態保留一天（有效期從每次請求往後延，閒置一天才會登出）。
+        # 預設的 session cookie 沒有過期時間，瀏覽器或手機關掉後就會被清除。
+        app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=1)
     app.jinja_env.globals["SLOTS"] = SLOTS
 
     @app.context_processor
@@ -566,6 +569,7 @@ def create_app(db_path=None):
             app.logger.error("Discord login failed: %s", type(exc).__name__)
             return Response(f"無法向 Discord 取得資料（{type(exc).__name__}），請稍後再試", 502)
         session.clear()
+        session.permanent = True
         session["discord_id"] = discord_id
         if discord_id in app.config["OWNER_DISCORD_IDS"]:
             session["role"], session["name"] = "owner", ME
