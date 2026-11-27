@@ -1,5 +1,6 @@
-// 貓掌：有人把「已付」勾起來時，貓掌從上方打下來，並提醒「還沒還錢就想打勾？」。
-// 只是提醒，不會擋住勾選。減少動態效果的設定開啟時只顯示文字，不做動畫。
+// 貓掌：有人把「已付」勾起來時，貓掌從上方打下來，把勾拍掉。
+// 再按一次就算數，所以貓只會擋一下，不會把「已付」整個擋死。
+// 減少動態效果的設定開啟時不做動畫，但拍掉的邏輯一樣。
 (function () {
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -22,6 +23,12 @@
     return { left: left, top: top };
   }
 
+  // 剛被拍掉的勾選框：短時間內再勾就放行
+  var SWAT_WINDOW = 4000;
+  var IMPACT_MS = 330;          // 貓掌落下、碰到勾選框的時間點
+  var swatAt = new WeakMap();   // 勾選框 -> 上次被拍掉的時間
+  var pending = new WeakSet();  // 正在等待拍掉的勾選框
+
   function slap(target) {
     var rect = target.getBoundingClientRect();
     var wrap = document.createElement("div");
@@ -31,10 +38,17 @@
 
     var bubble = document.createElement("div");
     bubble.className = "fun-bubble";
-    bubble.textContent = "還沒還錢就想打勾？喵！";
+    bubble.textContent = "不准打勾！再按一次本喵就讓你過喵。";
     wrap.appendChild(bubble);
 
     var pos = placeAbove(rect, 92);
+    // 碰到勾選框的瞬間把勾拿掉；change 事件會讓表格照常存檔
+    setTimeout(function () {
+      target.checked = false;
+      target.dispatchEvent(new Event("change", { bubbles: true }));
+      swatAt.set(target, Date.now());
+      pending.delete(target);
+    }, IMPACT_MS);
     wrap.style.left = pos.left + "px";
     wrap.style.top = pos.top + "px";
     document.body.appendChild(wrap);
@@ -54,6 +68,15 @@
   document.addEventListener("change", function (e) {
     var t = e.target;
     if (!t || t.tagName !== "INPUT" || t.type !== "checkbox" || t.name !== "paid") return;
-    if (t.checked) slap(t);
+    if (!t.checked) return;
+    // 程式自己拍掉勾選時觸發的 change，直接放過，避免無限循環
+    if (pending.has(t)) return;
+    var last = swatAt.get(t);
+    if (last && Date.now() - last < SWAT_WINDOW) {
+      swatAt.delete(t); // 第二次按，放行
+      return;
+    }
+    pending.add(t);
+    slap(t);
   });
 })();
