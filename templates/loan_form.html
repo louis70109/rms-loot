@@ -84,6 +84,21 @@
 </section>
 
 <section class="card">
+  <h2>封存</h2>
+  {% if data.archived %}
+    <p class="muted">這筆紀錄已封存（冷資料），預設不顯示，到「已封存」才看得到。</p>
+    <form method="post" action="{{ url_for('loan_unarchive', loan_id=loan_id) }}">
+      <button class="btn">取消封存</button>
+    </form>
+  {% else %}
+    <p class="muted">封存後預設不顯示，之後需要時到「已封存」查看。</p>
+    <form method="post" action="{{ url_for('loan_archive', loan_id=loan_id) }}">
+      <button class="btn">封存這筆紀錄</button>
+    </form>
+  {% endif %}
+</section>
+
+<section class="card">
   <h2>刪除</h2>
   <p class="muted">刪除紀錄會連同所有圖片一起刪除，無法復原。</p>
   <form method="post" action="{{ url_for('loan_delete', loan_id=loan_id) }}"

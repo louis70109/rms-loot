@@ -293,3 +293,6 @@ td.center input[type="checkbox"] { width: 16px; height: 16px; }
 .loan-thumbs { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
 .loan-thumbs figure { margin: 0; }
 .loan-thumbs figure form { margin-top: 6px; }
+
+/* 借還列表的封存按鈕 */
+.archive-form { margin-top: 6px; }

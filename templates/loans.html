@@ -6,11 +6,22 @@
   {% if can_edit %}<a class="btn" href="{{ url_for('loan_new') }}">＋ 新增借還</a>{% endif %}
 </div>
 <p class="hint">
-  <a href="{{ url_for('loans_list') }}" {% if direction == 'all' %}aria-current="page"{% endif %}>全部</a>
+  <a href="{{ url_for('loans_list', view='active') }}" {% if view == 'active' %}aria-current="page"{% endif %}>進行中（{{ counts.active }}）</a>
+  · <a href="{{ url_for('loans_list', view='archived') }}" {% if view == 'archived' %}aria-current="page"{% endif %}>已封存（{{ counts.archived }}）</a>
+</p>
+<p class="hint">
+  <a href="{{ url_for('loans_list', view=view) }}" {% if direction == 'all' %}aria-current="page"{% endif %}>全部</a>
   {% for key, label in directions.items() %}
-    · <a href="{{ url_for('loans_list', direction=key) }}" {% if direction == key %}aria-current="page"{% endif %}>{{ label }}</a>
+    · <a href="{{ url_for('loans_list', direction=key, view=view) }}" {% if direction == key %}aria-current="page"{% endif %}>{{ label }}</a>
   {% endfor %}
 </p>
+{% if view == 'archived' %}
+  <p class="hint">已封存的紀錄是冷資料，預設不顯示。這裡只在你打開時才載入。</p>
+{% elif can_edit and counts.returned_active %}
+  <form method="post" action="{{ url_for('loans_archive_returned') }}" class="actions-row">
+    <button class="btn">封存所有已歸還（{{ counts.returned_active }} 筆）</button>
+  </form>
+{% endif %}
 <div class="table-wrap">
   <table class="grid">
     <thead>
@@ -24,6 +35,12 @@
           <td>
             {% if can_edit %}<a href="{{ url_for('loan_edit', loan_id=l.id) }}">{{ l.item }}</a>{% else %}{{ l.item }}{% endif %}
             {% if l.note %}<div class="muted">{{ l.note }}</div>{% endif %}
+            {% if can_edit %}
+              <form method="post" action="{{ url_for('loan_unarchive' if view == 'archived' else 'loan_archive', loan_id=l.id) }}" class="archive-form">
+                <input type="hidden" name="next" value="{{ url_for('loans_list', view=view) }}">
+                <button class="btn">{{ '取消封存' if view == 'archived' else '封存' }}</button>
+              </form>
+            {% endif %}
           </td>
           <td>{{ l.quantity }}</td>
           <td>{{ l.loan_date }}</td>
