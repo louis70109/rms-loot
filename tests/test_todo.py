@@ -52,14 +52,16 @@ def test_todo_page_is_public_without_login_when_auth_is_off(tmp_path, monkeypatc
     assert create_app(tmp_path / "open.db").test_client().get("/todo").status_code == 200
 
 
-def test_member_can_view_todo_but_anonymous_is_redirected(tmp_path, monkeypatch):
+def test_member_can_view_todo_but_anonymous_sees_login_wall(tmp_path, monkeypatch):
     for k in ("APP_PASSWORD", "RMS_REQUIRE_AUTH"):
         monkeypatch.delenv(k, raising=False)
     for k, v in DISCORD_ENV.items():
         monkeypatch.setenv(k, v)
     app = create_app(tmp_path / "discord-todo.db")
     client = app.test_client()
-    assert client.get("/todo").status_code == 302  # 未登入導向 Discord 登入
+    resp = client.get("/todo")
+    assert resp.status_code == 401  # 未登入：顯示擋板頁面
+    assert "滾去登入" in resp.get_data(as_text=True)
     with client.session_transaction() as s:
         s["role"] = "member"
         s["name"] = "ERIC"

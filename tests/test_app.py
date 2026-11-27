@@ -342,12 +342,17 @@ def _log_in_as(app, monkeypatch, discord_id):
     return client
 
 
-def test_discord_gate_redirects_anonymous_to_login(discord_app):
+def test_discord_gate_shows_login_wall_to_anonymous(discord_app):
     client = discord_app.test_client()
     resp = client.get("/")
-    assert resp.status_code == 302 and resp.headers["Location"].endswith("/auth/discord/login")
+    html = resp.get_data(as_text=True)
+    assert resp.status_code == 401
+    assert "滾去登入" in html
+    assert "/auth/discord/login" in html
     assert client.get("/healthz").status_code == 200
-    assert client.post("/runs/new", data={}).status_code == 401
+    resp = client.post("/runs/new", data={})
+    assert resp.status_code == 401
+    assert "滾去登入" in resp.get_data(as_text=True)
 
 
 def test_discord_login_points_to_discord_with_identify_scope(discord_app):

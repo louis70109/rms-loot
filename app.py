@@ -507,7 +507,7 @@ def create_app(db_path=None):
                 # TODO 的資料依登入者分開，owner 與 member 都能用自己的清單；其他人回 401（不導向登入頁）
                 if role in ("owner", "member"):
                     return None
-                return jsonify(ok=False, error="請先登入"), 401
+                return jsonify(ok=False, error="給我先登入，你是誰喵！"), 401
             if role == "owner":
                 return None
             if role == "member":
@@ -516,14 +516,15 @@ def create_app(db_path=None):
                     return None
                 if request.method == "POST" and re.fullmatch(r"/drops/\d+/edit", request.path):
                     return None  # 權限在 drop_edit 裡逐筆檢查
-                return Response("沒有權限", 403)
+                return Response("本喵說不準，你敢亂點試試看喵！", 403)
             if role == "unbound" and request.path == "/auth/bind":
                 return None
             if request.method == "GET":
                 if role == "unbound":
                     return redirect(url_for("discord_bind"))
-                return redirect(url_for("discord_login"))
-            return Response("請先登入", 401)
+                # 未登入：先顯示擋板頁面，而不是直接丟到 Discord
+                return render_template("login_wall.html"), 401
+            return Response("給我滾去登入喵！", 401)
         expected = app.config["APP_PASSWORD"]
         if not expected:
             if app.config["REQUIRE_AUTH"]:
@@ -593,17 +594,17 @@ def create_app(db_path=None):
         if request.method == "POST":
             name = clean(request.form.get("name"))
             if not name or name.lower() == ME.lower():
-                flash("請選一個名字", "error")
+                flash("給我選一個名字喵！", "error")
             else:
                 try:
                     db.execute("INSERT INTO bindings (discord_id, name) VALUES (?, ?)",
                                (session["discord_id"], name))
                     db.commit()
                 except sqlite3.IntegrityError:
-                    flash(f"「{name}」已經被綁定了，請選別的名字", "error")
+                    flash(f"「{name}」已經被別隻貓搶走了喵，給我選別的！", "error")
                 else:
                     session["role"], session["name"] = "member", name
-                    flash(f"已綁定為 {name}", "ok")
+                    flash(f"綁好了喵，你現在是 {name}。", "ok")
                     return redirect(url_for("index"))
         taken = {r["name"].lower() for r in db.execute("SELECT name FROM bindings")}
         choices = [n for n in known_names(db) if n.lower() not in taken]
@@ -647,13 +648,13 @@ def create_app(db_path=None):
             text = read_upload(request.files.get("file"))
             count = importer(db, text, replace=bool(request.form.get("replace")))
             db.commit()
-            flash(f"已匯入 {count} {label}", "ok")
+            flash(f"匯入 {count} {label} 了喵，本喵吃得很飽。", "ok")
         except ImportFailed as exc:
             db.rollback()
             for message in exc.errors[:20]:
                 flash(message, "error")
             if len(exc.errors) > 20:
-                flash(f"另有 {len(exc.errors) - 20} 個錯誤未列出，請修正後再匯入", "error")
+                flash(f"還有 {len(exc.errors) - 20} 個錯誤本喵懶得列了喵，修好再來匯入！", "error")
         except ValueError as exc:
             db.rollback()
             flash(str(exc), "error")
@@ -679,7 +680,7 @@ def create_app(db_path=None):
         group = next((p for p in build_payouts(db, fee, share)
                       if member and p["name"].lower() == member.lower()), None)
         if group is None or not group["sold_items"]:
-            flash(f"{member or '這位持有人'} 沒有可付款的項目", "error")
+            flash(f"{member or '這位持有人'} 沒有可以付的東西喵。", "error")
             return redirect(url_for("index"))
         ids = [it["id"] for it in group["sold_items"]]
         db.execute(f"UPDATE drops SET paid = 1, paid_date = ? WHERE id IN ({','.join('?' * len(ids))})",
@@ -689,7 +690,7 @@ def create_app(db_path=None):
                    (group["name"], paid_date, group["payout"], group["unpaid_sum"], len(ids),
                     "、".join(it["item"] for it in group["sold_items"]), group["formula"]))
         db.commit()
-        flash(f"已付給 {group['name']} {group['payout']:.2f}（{len(ids)} 件），付款日 {paid_date}", "ok")
+        flash(f"錢給 {group['name']} 了喵，{group['payout']:.2f} 楓幣，{len(ids)} 件，付款日 {paid_date}。", "ok")
         return redirect(url_for("index"))
 
     # 分贓紀錄
@@ -708,7 +709,7 @@ def create_app(db_path=None):
             if not errors:
                 save_run(db, data)
                 db.commit()
-                flash("已新增分贓紀錄", "ok")
+                flash("新增好了喵，又一場，給我繼續打！", "ok")
                 return redirect(url_for("runs"))
         return render_template("run_form.html", title="新增分贓紀錄", data=data, errors=errors,
                                names=known_names(db), action=url_for("run_new"))
@@ -731,7 +732,7 @@ def create_app(db_path=None):
             if not errors:
                 save_run(db, data, run_id)
                 db.commit()
-                flash("已更新分贓紀錄", "ok")
+                flash("改好了喵，別再改來改去。", "ok")
                 return redirect(url_for("runs"))
         return render_template("run_form.html", title=f"編輯第 {run_id} 場", data=data, errors=errors,
                                names=known_names(db), action=url_for("run_edit", run_id=run_id))
@@ -746,7 +747,7 @@ def create_app(db_path=None):
         save_run(db, data)
         db.commit()
         new_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
-        flash(f"已沿用第 {last['id']} 場新增第 {new_id} 場，可直接在表格上修改", "ok")
+        flash(f"本喵照第 {last['id']} 場抄了一份，變成第 {new_id} 場喵，直接在表格上改就好。", "ok")
         return redirect(url_for("runs"))
 
     @app.post("/runs/<int:run_id>/delete")
@@ -754,7 +755,7 @@ def create_app(db_path=None):
         db = get_db()
         db.execute("DELETE FROM runs WHERE id = ?", (run_id,))
         db.commit()
-        flash("已刪除分贓紀錄", "ok")
+        flash("刪掉了喵，別回頭看。", "ok")
         return redirect(url_for("runs"))
 
     # 掉落物
@@ -774,7 +775,7 @@ def create_app(db_path=None):
             if not errors:
                 save_drop(db, data)
                 db.commit()
-                flash("已新增掉落物", "ok")
+                flash("掉落物記下了喵。", "ok")
                 return redirect(url_for("drops"))
         return render_template("drop_form.html", title="新增掉落物", data=data, errors=errors,
                                names=known_names(db), action=url_for("drop_new"))
@@ -790,7 +791,7 @@ def create_app(db_path=None):
             # 成員只能用表格改「持有人是自己」的掉落物；持有人與付款狀態不能改
             if request.method != "POST" or not request.form.get("inline") or \
                     row["member"].lower() != session.get("name", "").lower():
-                return Response("沒有權限", 403)
+                return Response("本喵說不準，你敢亂點試試看喵！", 403)
         if request.method == "POST":
             data, errors = read_drop_form(db, request.form)
             if session.get("role") == "member":
@@ -804,7 +805,7 @@ def create_app(db_path=None):
             if not errors:
                 save_drop(db, data, drop_id)
                 db.commit()
-                flash("已更新掉落物", "ok")
+                flash("掉落物改好了喵。", "ok")
                 return redirect(url_for("drops"))
         return render_template("drop_form.html", title=f"編輯掉落物 #{drop_id}", data=data,
                                errors=errors, names=known_names(db),
@@ -822,7 +823,7 @@ def create_app(db_path=None):
         db = get_db()
         db.execute("DELETE FROM drops WHERE id = ?", (drop_id,))
         db.commit()
-        flash("已刪除掉落物", "ok")
+        flash("掉落物刪掉了喵，下次手給我穩一點！", "ok")
         return redirect(url_for("drops"))
 
     # 設定 / 匯入
@@ -857,12 +858,12 @@ def create_app(db_path=None):
             if not (0 <= fee < 100 and 0 <= share <= 100):
                 raise ValueError
         except ValueError:
-            flash("手續費請填 0 到 100 之間（不含 100），分配比例請填 0 到 100 之間", "error")
+            flash("喵！手續費要填 0 到 100 之間（不含 100），分配比例也是，別亂填！", "error")
             return redirect(url_for("settings"))
         set_setting(db, "payout_fee_percent", fee)
         set_setting(db, "payout_share_percent", share)
         db.commit()
-        flash(f"已設定：扣手續費 {fee:g}%，分配 {share:g}%", "ok")
+        flash(f"設定好了喵：扣手續費 {fee:g}%，分配 {share:g}%。", "ok")
         return redirect(url_for("settings"))
 
     @app.post("/import/runs")

@@ -49,8 +49,8 @@
   }
 
   function failed(e) {
-    if (e && e.status === 401) say("請先登入 Discord 才能使用 TODO。", true);
-    else say("儲存失敗：" + (e && e.message ? e.message : "未知錯誤") + "。畫面已還原。", true);
+    if (e && e.status === 401) say("給我先登入 Discord，再來碰 TODO 喵！", true);
+    else say("喵！存不進去：" + (e && e.message ? e.message : "未知錯誤") + "。本喵已經幫你還原，別再亂來。", true);
   }
 
   // ---- 載入與舊資料搬移 ----------------------------------------------------
@@ -75,13 +75,13 @@
   }
 
   function load() {
-    say("正在載入…");
+    say("本喵去翻清單喵…");
     fetchList().then(function () {
       var old = legacyItems();
       if (old && data.level.length === 0 && data.quest.length === 0) {
         return api("POST", API + "/import", old).then(function () {
           try { localStorage.removeItem(LEGACY_KEY); } catch (e) {}
-          say("已把這個瀏覽器的舊清單搬進資料庫。");
+          say("舊清單本喵已經搬進資料庫了喵。");
           return fetchList();
         });
       }
@@ -202,7 +202,17 @@
       list.innerHTML = "";
       if (!loaded) return;
       if (items.length === 0) {
-        list.appendChild(el("li", "empty", "還沒有項目"));
+        var emptyLi = el("li", "empty");
+        emptyLi.innerHTML = '<span>空空如也喵！快打字，別發呆！</span>' +
+          '<span class="fun-cat" role="button" tabindex="0" aria-label="叫醒貓咪">' +
+            '<svg class="fun-cat-svg" viewBox="0 0 72 52" width="48" height="34" aria-hidden="true">' +
+              '<path d="M12 16 L18 3 L28 13 Z M44 13 L54 3 L60 16 Z" fill="currentColor"/>' +
+              '<ellipse cx="36" cy="32" rx="26" ry="16" fill="currentColor"/>' +
+              '<g class="fun-cat-shut" stroke="var(--bg)" stroke-width="2.5" fill="none" stroke-linecap="round"><path d="M22 31 Q26 35 30 31"/><path d="M42 31 Q46 35 50 31"/></g>' +
+              '<g class="fun-cat-open" fill="var(--bg)"><circle cx="26" cy="30" r="3"/><circle cx="46" cy="30" r="3"/></g>' +
+              '<path d="M34 37 L38 37 L36 39 Z" fill="#ff9bbd"/>' +
+            '</svg><span class="fun-cat-zz" aria-hidden="true">Zzz</span><span class="fun-cat-say" hidden></span></span>';
+        list.appendChild(emptyLi);
         return;
       }
       items.forEach(function (item) { list.appendChild(renderItem(group, item)); });
@@ -217,6 +227,7 @@
     cb.type = "checkbox";
     cb.checked = !!item.done;
     cb.id = "todo-cb-" + item.id;
+    cb.setAttribute("data-paw-msg", "不准偷懶！再按一次本喵才算你完成喵。");
     cb.addEventListener("change", function () {
       patch(group, item, { done: cb.checked });
     });
@@ -280,9 +291,9 @@
     detail.appendChild(noteLabel);
 
     if (indexStatus === "loading") {
-      detail.appendChild(el("p", "hint", "正在載入攻略頁目錄…"));
+      detail.appendChild(el("p", "hint", "本喵去翻攻略頁目錄喵…"));
     } else if (indexStatus === "unavailable") {
-      detail.appendChild(el("p", "hint", "攻略頁目錄暫時無法載入，可以先用下面的手動連結。"));
+      detail.appendChild(el("p", "hint", "攻略頁目錄本喵抓不到喵，先用下面的手動連結湊合一下。"));
     } else {
       var titleText = "攻略頁";
       if (indexStatus === "snapshot") titleText += "（內建目錄" + (snapshotDate ? "，更新於 " + snapshotDate : "") + "）";
@@ -330,7 +341,7 @@
     linkInput.addEventListener("change", function () {
       var v = linkInput.value.trim();
       if (v && !safeLink(v)) {
-        warn.textContent = "連結需要以 http:// 或 https:// 開頭，沒有儲存。";
+        warn.textContent = "連結要 http:// 或 https:// 開頭喵！本喵不存亂七八糟的東西。";
         linkInput.value = item.link;
         return;
       }

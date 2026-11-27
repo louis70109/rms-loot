@@ -5,7 +5,7 @@
   <h2>掉落物（{{ drops|length }} 件）</h2>
   <a class="btn" href="{{ url_for('drop_new') }}">＋ 新增掉落物</a>
 </div>
-<p class="hint">直接在表格上改。Enter / ↓ 往下、Shift+Enter / ↑ 往上，離開格子即自動儲存；Ctrl+D 把這一列換成上一列的內容。</p>
+<p class="hint">直接在表格上改喵。Enter / ↓ 往下、Shift+Enter / ↑ 往上，離開格子就自動存好喵；Ctrl+D 把這一列換成上一列的內容，偷懶專用。</p>
 <datalist id="names">
   {% for n in names %}<option value="{{ n }}"></option>{% endfor %}
 </datalist>
@@ -39,13 +39,13 @@
           </td>
           <td><input class="cell narrow" type="date" name="paid_date" value="{{ d.paid_date }}" form="{{ f }}"></td>
           <td class="actions">
-            <form method="post" action="{{ url_for('drop_delete', drop_id=d.id) }}" onsubmit="return confirm('確定刪除「{{ d.item }}」？')">
+            <form method="post" action="{{ url_for('drop_delete', drop_id=d.id) }}" onsubmit="return confirm('喵！真的要刪「{{ d.item }}」？不准後悔喵！')">
               <button class="link danger">刪除</button>
             </form>
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="9" class="muted">還沒有掉落物。</td></tr>
+        <tr><td colspan="9" class="muted">還沒有掉落物喵，運氣差成這樣？給我去刷！ {% include '_cat_sleep.html' %}</td></tr>
       {% endfor %}
     </tbody>
   </table>
