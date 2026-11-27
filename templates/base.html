@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{% endblock %} · RMS 分贓表</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='fun.css') }}">
   <meta name="theme-color" content="#2f6fed">
@@ -16,12 +18,12 @@
   <header class="topbar">
     <strong class="brand">RMS 分贓表</strong>
     <nav>
-      <a href="{{ url_for('index') }}">總覽</a>
-      <a href="{{ url_for('runs') }}">分贓紀錄</a>
-      <a href="{{ url_for('drops') }}">掉落物</a>
-      <a href="{{ url_for('loans_list') }}">借還</a>
-      <a href="{{ url_for('todo_page') }}">TODO</a>
-      <a href="{{ url_for('settings') }}">匯入 / 設定</a>
+      <a href="{{ url_for('index') }}"{% if request.endpoint == "index" %} aria-current="page"{% endif %}>總覽</a>
+      <a href="{{ url_for('runs') }}"{% if request.endpoint == "runs" %} aria-current="page"{% endif %}>分贓紀錄</a>
+      <a href="{{ url_for('drops') }}"{% if request.endpoint == "drops" %} aria-current="page"{% endif %}>掉落物</a>
+      <a href="{{ url_for('loans_list') }}"{% if request.endpoint == "loans_list" %} aria-current="page"{% endif %}>借還</a>
+      <a href="{{ url_for('todo_page') }}"{% if request.endpoint == "todo_page" %} aria-current="page"{% endif %}>TODO</a>
+      <a href="{{ url_for('settings') }}"{% if request.endpoint == "settings" %} aria-current="page"{% endif %}>匯入 / 設定</a>
     </nav>
     {% if auth_role %}
       <span class="who">{{ auth_name or '未綁定' }}</span>
