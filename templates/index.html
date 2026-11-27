@@ -27,7 +27,7 @@
             </td>
           </tr>
         {% else %}
-          <tr><td colspan="8" class="muted">還沒有紀錄，是不是都沒在打？</td></tr>
+          <tr><td colspan="8" class="muted">還沒有紀錄喵，是不是都沒在打？</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -56,7 +56,7 @@
             <td>{% if p.guest_runs %}<span class="badge">陪打</span>{% endif %}</td>
           </tr>
         {% else %}
-          <tr><td colspan="8" class="muted">還沒有紀錄，是不是都沒在打？</td></tr>
+          <tr><td colspan="8" class="muted">還沒有紀錄喵，是不是都沒在打？</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -108,7 +108,7 @@
                 <p class="hint">未計入（缺賣出價）：{{ p.incomplete_items|join('、') }}</p>
               {% endif %}
               <form method="post" action="{{ url_for('payout_pay') }}" class="pay-form"
-                    onsubmit="return confirm('真的要付給 {{ p.name }} {{ '%.2f'|format(p.payout) }} 楓幣？付了就不能後悔喔。')">
+                    onsubmit="return confirm('喵？真的要付給 {{ p.name }} {{ '%.2f'|format(p.payout) }} 楓幣嗎？付了就不能後悔喔喵。')">
                 <input type="hidden" name="member" value="{{ p.name }}">
                 <label>付款日 <input type="date" name="paid_date" value="{{ today }}"></label>
                 <button class="btn">一鍵付款：標記已付、寫入付款日、存下金額</button>
@@ -117,7 +117,7 @@
           </tr>
           {% endif %}
         {% else %}
-          <tr><td colspan="6" class="muted">還沒有掉落物，運氣這麼差喔。</td></tr>
+          <tr><td colspan="6" class="muted">還沒有掉落物喵，運氣這麼差喔。</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -126,7 +126,7 @@
 
 <section>
   <h2>付款紀錄</h2>
-  <p class="hint">每按一次「一鍵付款」就會存一筆，金額和計算式是當下算好的，之後改價格也不會變。</p>
+  <p class="hint">本喵替你記著：每按一次「一鍵付款」就會存一筆，金額和計算式是當下算好的，之後改價格也不會變。</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th>付款日</th><th>持有人</th><th class="num">付款金額</th><th>件數</th><th>計算式</th><th>物品</th></tr></thead>
@@ -141,7 +141,7 @@
             <td>{{ pay.item_names }}</td>
           </tr>
         {% else %}
-          <tr><td colspan="6" class="muted">還沒付過半毛錢，大家都很會拖喔。</td></tr>
+          <tr><td colspan="6" class="muted">還沒付過半毛錢喵，大家都很會拖喔。</td></tr>
         {% endfor %}
       </tbody>
     </table>

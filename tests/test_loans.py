@@ -93,7 +93,7 @@ def test_non_image_upload_is_rejected(client, app):
         data={"direction": "lent", "item": "Thing", "quantity": "1",
               "files": [(BytesIO(b"not an image"), "fake.png")]},
         content_type="multipart/form-data", follow_redirects=True)
-    assert "不是可以讀取的圖片" in resp.get_data(as_text=True)
+    assert "不是圖片喵" in resp.get_data(as_text=True)
     assert _db(app).execute("SELECT COUNT(*) FROM loan_images").fetchone()[0] == 0
 
 
@@ -153,7 +153,7 @@ def test_upload_refused_when_storage_is_critical(client, app, monkeypatch):
     monkeypatch.setattr(storage, "_usage", lambda p: (0.97, 1_000_000, 970_000))
     resp = client.post("/loans/1/images", data={"files": [(BytesIO(_png()), "a.png")]},
                        content_type="multipart/form-data", follow_redirects=True)
-    assert "無法上傳圖片" in resp.get_data(as_text=True)
+    assert "圖片本喵不收喵" in resp.get_data(as_text=True)
     assert _db(app).execute("SELECT COUNT(*) FROM loan_images").fetchone()[0] == 0
 
 
@@ -233,7 +233,7 @@ def test_archive_returned_only_touches_returned_items(client, app):
     client.post("/loans/1/edit", data={"direction": "lent", "item": "已歸還", "quantity": "1",
                                        "returned": "1", "returned_date": "2026-11-20"})
     resp = client.post("/loans/archive-returned", follow_redirects=True)
-    assert "已封存 1 筆" in resp.get_data(as_text=True)
+    assert "已封進冷凍櫃 1 筆" in resp.get_data(as_text=True)
     db = _db(app)
     rows = {r["item"]: r["archived"] for r in db.execute("SELECT item, archived FROM loans")}
     assert rows == {"已歸還": 1, "還沒還": 0}

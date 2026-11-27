@@ -25,11 +25,11 @@
       });
       const data = await resp.json().catch(() => ({ ok: false, errors: ['儲存失敗'] }));
       row.classList.toggle('has-error', !data.ok);
-      if (data.ok) say('已儲存', 'ok');
+      if (data.ok) say('喵，存好了。', 'ok');
       else say((data.errors || ['儲存失敗']).join('；'), 'error');
     } catch (err) {
       row.classList.add('has-error');
-      say('網路錯誤，這次沒有儲存', 'error');
+      say('網路斷掉了喵，這次沒存到，再試一次喵。', 'error');
     }
   }
 
@@ -49,7 +49,7 @@
   function fillFromAbove(tr) {
     const rows = dataRows();
     const idx = rows.indexOf(tr);
-    if (idx <= 0) { say('上面沒有可以沿用的列', 'error'); return; }
+    if (idx <= 0) { say('上面沒有可以抄的列喵。', 'error'); return; }
     const srcs = Array.from(rows[idx - 1].querySelectorAll('input[name]')).filter((i) => i.form);
     const dsts = Array.from(tr.querySelectorAll('input[name]')).filter((i) => i.form);
     for (const s of srcs) {

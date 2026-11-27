@@ -5,7 +5,7 @@
   <h2>分贓紀錄（{{ runs|length }} 場）</h2>
   <a class="btn" href="{{ url_for('run_new') }}">＋ 新增一場</a>
 </div>
-<p class="hint">直接在表格上改。Enter / ↓ 往下、Shift+Enter / ↑ 往上，離開格子即自動儲存；Ctrl+D 把這一列換成上一列的內容。得主填 NJ 或同行者名字，留空 = 這捲沒掉。</p>
+<p class="hint">直接在表格上改喵。Enter / ↓ 往下、Shift+Enter / ↑ 往上，離開格子就自動存好喵；Ctrl+D 把這一列換成上一列的內容，偷懶專用。得主填 NJ 或同行者名字，留空 = 這捲沒掉。</p>
 <datalist id="names">
   <option value="NJ"></option>
   {% for n in names %}<option value="{{ n }}"></option>{% endfor %}
@@ -37,19 +37,19 @@
           {% endfor %}
           <td><input class="cell" name="note" value="{{ r.note }}" form="{{ f }}"></td>
           <td class="actions">
-            <form method="post" action="{{ url_for('run_delete', run_id=r.id) }}" onsubmit="return confirm('真的要刪第 {{ r.id }} 場喔？想清楚再按。')">
+            <form method="post" action="{{ url_for('run_delete', run_id=r.id) }}" onsubmit="return confirm('喵？真的要刪第 {{ r.id }} 場嗎？想清楚再按喵。')">
               <button class="link danger">刪除</button>
             </form>
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="10" class="muted">還沒有紀錄，你是都沒在打喔？按「新增一場」，或到「匯入 / 設定」匯入 CSV。</td></tr>
+        <tr><td colspan="10" class="muted">還沒有紀錄喵，你是都沒在打嗎？按「新增一場」，或到「匯入 / 設定」匯入 CSV。</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 <form method="post" action="{{ url_for('run_copy_last') }}" class="add-row">
   <button class="btn">＋ 沿用上一筆新增一列</button>
-  <span class="hint">會複製最後一筆的全部欄位，再到表格上改要換的地方。</span>
+  <span class="hint">會複製最後一筆的全部欄位，本喵幫你偷懶，你再去改要換的地方喵。</span>
 </form>
 {% endblock %}

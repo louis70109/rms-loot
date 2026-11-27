@@ -68,14 +68,14 @@
             <img class="loan-thumb" src="{{ url_for('uploaded_file', filename=img.filename) }}" alt="圖片 {{ loop.index }}" loading="lazy">
           </a>
           <form method="post" action="{{ url_for('loan_image_delete', image_id=img.id) }}"
-                onsubmit="return confirm('這張真的要刪？')">
+                onsubmit="return confirm('這張真的要刪喵？')">
             <button class="btn">刪除圖片</button>
           </form>
         </figure>
       {% endfor %}
     </div>
   {% else %}
-    <p class="muted">沒有圖片，你是用文字說的喔？</p>
+    <p class="muted">沒有圖片喵，你是用說的喔？</p>
   {% endif %}
   <form method="post" action="{{ url_for('loan_images_add', loan_id=loan_id) }}" enctype="multipart/form-data" class="actions-row">
     <input type="file" name="files" accept="image/*" multiple>
@@ -86,12 +86,12 @@
 <section class="card">
   <h2>封存</h2>
   {% if data.archived %}
-    <p class="muted">這筆紀錄已封存（冷資料），預設不顯示，到「已封存」才看得到。</p>
+    <p class="muted">這筆已經被本喵封進冷凍櫃了喵，預設不拿出來，到「已封存」才找得到。</p>
     <form method="post" action="{{ url_for('loan_unarchive', loan_id=loan_id) }}">
       <button class="btn">取消封存</button>
     </form>
   {% else %}
-    <p class="muted">封存後預設不顯示，之後需要時到「已封存」查看。</p>
+    <p class="muted">封進冷凍櫃後預設不拿出來喵，要看再去「已封存」翻。</p>
     <form method="post" action="{{ url_for('loan_archive', loan_id=loan_id) }}">
       <button class="btn">封存這筆紀錄</button>
     </form>
@@ -100,9 +100,9 @@
 
 <section class="card">
   <h2>刪除</h2>
-  <p class="muted">刪除紀錄會連同所有圖片一起刪除，無法復原。</p>
+  <p class="muted">刪掉就回不來了喵，圖片也會一起陪葬。</p>
   <form method="post" action="{{ url_for('loan_delete', loan_id=loan_id) }}"
-        onsubmit="return confirm('整筆刪光光，你確定？')">
+        onsubmit="return confirm('整筆刪光光喵，你確定？')">
     <button class="btn">刪除這筆紀錄</button>
   </form>
 </section>

@@ -40,13 +40,13 @@
     {% set critical = storage_warning.level == 'critical' %}
     <dialog id="storage-warning" class="storage-dialog {{ storage_warning.level }}"
             data-level="{{ storage_warning.level }}" aria-labelledby="storage-warning-title">
-      <h2 id="storage-warning-title">{{ '空間即將用完' if critical else '儲存空間快滿' }}</h2>
-      <p>資料所在的儲存空間已使用 <strong>{{ storage_warning.percent }}%</strong>
+      <h2 id="storage-warning-title">{{ '喵！倉庫要爆了' if critical else '倉庫快滿了喵' }}</h2>
+      <p>本喵的倉庫已經用了 <strong>{{ storage_warning.percent }}%</strong>
         （{{ storage_warning.used_mb }} / {{ storage_warning.total_mb }} MB）。</p>
-      <p class="muted">{{ '空間不足時寫入可能失敗，請盡快清理或擴充 volume。' if critical
-                          else '請留意剩餘空間，必要時清理或擴充 volume。' }}</p>
+      <p class="muted">{{ '倉庫塞爆的話寫進去會出事喵，快清一清或擴充 volume。' if critical
+                          else '留意一下剩餘空間喵，必要時清理或擴充 volume。' }}</p>
       <form method="dialog" class="storage-actions">
-        <button class="btn">我知道了</button>
+        <button class="btn">喵，我知道了</button>
       </form>
     </dialog>
     <script>

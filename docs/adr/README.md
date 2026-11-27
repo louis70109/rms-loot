@@ -15,6 +15,7 @@
 | [0009](0009-todo-in-site.md) | TODO 放進網站，資料只存在瀏覽器 | 已被 0010 取代 |
 | [0010](0010-todo-in-database.md) | TODO 存進資料庫，依 Discord 帳號分開 | 已接受 |
 | [0011](0011-loan-archive-cold-data.md) | 借還紀錄封存為冷資料，預設不顯示 | 已接受 |
+| [0012](0012-cat-voice.md) | 全站文字改用貓的口吻 | 已接受 |
 
 ## 約定
 

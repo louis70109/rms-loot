@@ -35,7 +35,7 @@ def test_warning_dialog_is_rendered_on_pages(monkeypatch, tmp_path):
     app = create_app(tmp_path / "s.db")
     html = app.test_client().get("/").get_data(as_text=True)
     assert 'id="storage-warning"' in html
-    assert "儲存空間快滿" in html
+    assert "倉庫快滿了喵" in html
     assert "85%" in html
     assert 'data-level="warning"' in html
 
@@ -44,7 +44,7 @@ def test_critical_dialog_uses_critical_text(monkeypatch, tmp_path):
     _fake_usage(monkeypatch, 0.97)
     app = create_app(tmp_path / "s.db")
     html = app.test_client().get("/runs").get_data(as_text=True)
-    assert "空間即將用完" in html
+    assert "倉庫要爆了" in html
     assert 'data-level="critical"' in html
 
 

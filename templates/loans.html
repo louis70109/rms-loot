@@ -16,7 +16,7 @@
   {% endfor %}
 </p>
 {% if view == 'archived' %}
-  <p class="hint">已封存的紀錄是冷資料，預設不顯示。這裡只在你打開時才載入。</p>
+  <p class="hint">封存的紀錄是冷凍櫃裡的魚喵，預設不拿出來。你想看才打開，本喵才會去翻箱子喵。</p>
 {% elif can_edit and counts.returned_active %}
   <form method="post" action="{{ url_for('loans_archive_returned') }}" class="actions-row">
     <button class="btn">封存所有已歸還（{{ counts.returned_active }} 筆）</button>
@@ -52,7 +52,7 @@
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="7" class="muted">還沒有借還紀錄，是沒人借你還是你不借人？</td></tr>
+        <tr><td colspan="7" class="muted">還沒有借還紀錄喵，是沒人借你還是你不借人？</td></tr>
       {% endfor %}
     </tbody>
   </table>

@@ -50,7 +50,7 @@
 
   function failed(e) {
     if (e && e.status === 401) say("滾去登入 Discord 再來玩 TODO 啦。", true);
-    else say("儲存失敗：" + (e && e.message ? e.message : "未知錯誤") + "。畫面已還原。", true);
+    else say("喵！存不進去：" + (e && e.message ? e.message : "未知錯誤") + "。本喵已經幫你還原了。", true);
   }
 
   // ---- 載入與舊資料搬移 ----------------------------------------------------
@@ -75,13 +75,13 @@
   }
 
   function load() {
-    say("正在載入…");
+    say("本喵去翻清單喵…");
     fetchList().then(function () {
       var old = legacyItems();
       if (old && data.level.length === 0 && data.quest.length === 0) {
         return api("POST", API + "/import", old).then(function () {
           try { localStorage.removeItem(LEGACY_KEY); } catch (e) {}
-          say("已把這個瀏覽器的舊清單搬進資料庫。");
+          say("舊清單本喵已經搬進資料庫了喵。");
           return fetchList();
         });
       }
@@ -280,9 +280,9 @@
     detail.appendChild(noteLabel);
 
     if (indexStatus === "loading") {
-      detail.appendChild(el("p", "hint", "正在載入攻略頁目錄…"));
+      detail.appendChild(el("p", "hint", "本喵去翻攻略頁目錄喵…"));
     } else if (indexStatus === "unavailable") {
-      detail.appendChild(el("p", "hint", "攻略頁目錄暫時無法載入，可以先用下面的手動連結。"));
+      detail.appendChild(el("p", "hint", "攻略頁目錄本喵抓不到喵，先用下面的手動連結湊合一下。"));
     } else {
       var titleText = "攻略頁";
       if (indexStatus === "snapshot") titleText += "（內建目錄" + (snapshotDate ? "，更新於 " + snapshotDate : "") + "）";
@@ -330,7 +330,7 @@
     linkInput.addEventListener("change", function () {
       var v = linkInput.value.trim();
       if (v && !safeLink(v)) {
-        warn.textContent = "連結需要以 http:// 或 https:// 開頭，沒有儲存。";
+        warn.textContent = "連結要以 http:// 或 https:// 開頭喵，本喵沒幫你存。";
         linkInput.value = item.link;
         return;
       }
