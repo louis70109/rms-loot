@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{% endblock %} · RMS 分贓表</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='fun.css') }}">
   <meta name="theme-color" content="#2f6fed">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-180.png') }}">
@@ -65,5 +66,6 @@
     </script>
   {% endif %}
   <script src="{{ url_for('static', filename='table.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='fun.js') }}" defer></script>
 </body>
 </html>
