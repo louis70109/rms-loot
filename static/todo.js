@@ -202,7 +202,17 @@
       list.innerHTML = "";
       if (!loaded) return;
       if (items.length === 0) {
-        list.appendChild(el("li", "empty", "空空如也喵！快打字，別發呆！"));
+        var emptyLi = el("li", "empty");
+        emptyLi.innerHTML = '<span>空空如也喵！快打字，別發呆！</span>' +
+          '<span class="fun-cat" role="button" tabindex="0" aria-label="叫醒貓咪">' +
+            '<svg class="fun-cat-svg" viewBox="0 0 72 52" width="48" height="34" aria-hidden="true">' +
+              '<path d="M12 16 L18 3 L28 13 Z M44 13 L54 3 L60 16 Z" fill="currentColor"/>' +
+              '<ellipse cx="36" cy="32" rx="26" ry="16" fill="currentColor"/>' +
+              '<g class="fun-cat-shut" stroke="var(--bg)" stroke-width="2.5" fill="none" stroke-linecap="round"><path d="M22 31 Q26 35 30 31"/><path d="M42 31 Q46 35 50 31"/></g>' +
+              '<g class="fun-cat-open" fill="var(--bg)"><circle cx="26" cy="30" r="3"/><circle cx="46" cy="30" r="3"/></g>' +
+              '<path d="M34 37 L38 37 L36 39 Z" fill="#ff9bbd"/>' +
+            '</svg><span class="fun-cat-zz" aria-hidden="true">Zzz</span><span class="fun-cat-say" hidden></span></span>';
+        list.appendChild(emptyLi);
         return;
       }
       items.forEach(function (item) { list.appendChild(renderItem(group, item)); });
@@ -217,6 +227,7 @@
     cb.type = "checkbox";
     cb.checked = !!item.done;
     cb.id = "todo-cb-" + item.id;
+    cb.setAttribute("data-paw-msg", "不准偷懶！再按一次本喵才算你完成喵。");
     cb.addEventListener("change", function () {
       patch(group, item, { done: cb.checked });
     });

@@ -1,6 +1,8 @@
-// 貓掌：有人把「已付」勾起來時，貓掌從上方打下來，把勾拍掉。
-// 再按一次就算數，所以貓只會擋一下，不會把「已付」整個擋死。
-// 減少動態效果的設定開啟時不做動畫，但拍掉的邏輯一樣。
+// 貓掌與貓咪互動。三種：
+// 1. 勾選框（已付、已歸還、TODO）：貓掌打下來把勾拍掉，再按一次就放行。
+// 2. 會跳確認框的按鈕（刪除、付款）：貓掌先掃過去，等它落下才跳出確認。
+// 3. 空白頁的睡貓：點一下叫醒，再點一下又睡回去。
+// 減少動態效果的設定開啟時不做動畫，但邏輯一樣。
 (function () {
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -15,6 +17,12 @@
       '</g>' +
     '</svg>';
 
+  var SWAT_WINDOW = 4000;     // 被拍掉後，這段時間內再勾就放行
+  var IMPACT_MS = 330;        // 貓掌落下、碰到勾選框的時間點
+  var GUARD_MS = 700;         // 確認框出現前，貓掌先停留的時間
+  var swatAt = new WeakMap();
+  var pending = new WeakSet();
+
   function placeAbove(rect, size) {
     var left = rect.left + rect.width / 2 - size / 2;
     var top = rect.top - size + 18;
@@ -23,13 +31,8 @@
     return { left: left, top: top };
   }
 
-  // 剛被拍掉的勾選框：短時間內再勾就放行
-  var SWAT_WINDOW = 4000;
-  var IMPACT_MS = 330;          // 貓掌落下、碰到勾選框的時間點
-  var swatAt = new WeakMap();   // 勾選框 -> 上次被拍掉的時間
-  var pending = new WeakSet();  // 正在等待拍掉的勾選框
-
-  function slap(target) {
+  // 生出一隻貓掌；onImpact 在貓掌落下的瞬間執行
+  function spawnPaw(target, message, onImpact) {
     var rect = target.getBoundingClientRect();
     var wrap = document.createElement("div");
     wrap.className = "fun-paw";
@@ -38,38 +41,44 @@
 
     var bubble = document.createElement("div");
     bubble.className = "fun-bubble";
-    bubble.textContent = "不准打勾！再按一次本喵就讓你過喵。";
+    bubble.textContent = message;
     wrap.appendChild(bubble);
 
     var pos = placeAbove(rect, 92);
-    // 碰到勾選框的瞬間把勾拿掉；change 事件會讓表格照常存檔
-    setTimeout(function () {
-      target.checked = false;
-      target.dispatchEvent(new Event("change", { bubbles: true }));
-      swatAt.set(target, Date.now());
-      pending.delete(target);
-    }, IMPACT_MS);
     wrap.style.left = pos.left + "px";
     wrap.style.top = pos.top + "px";
     document.body.appendChild(wrap);
+
+    if (onImpact) setTimeout(onImpact, IMPACT_MS);
 
     if (!reduceMotion) {
       document.body.classList.remove("fun-shake");
       void document.body.offsetWidth; // 重新觸發動畫
       document.body.classList.add("fun-shake");
     }
-
     setTimeout(function () {
       if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
       document.body.classList.remove("fun-shake");
     }, reduceMotion ? 1200 : 1000);
   }
 
+  // ---- 1. 勾選框：拍掉勾，再按一次放行 ----------------------------------
+
+  function swatMessage(t) {
+    if (t.getAttribute("data-paw-msg")) return t.getAttribute("data-paw-msg");
+    if (t.name === "returned") return "還沒還回來就想勾？再按一次本喵才放你過喵。";
+    return "不准打勾！再按一次本喵就讓你過喵。";
+  }
+
+  function isSwatTarget(t) {
+    return t && t.tagName === "INPUT" && t.type === "checkbox" &&
+      (t.name === "paid" || t.name === "returned" || t.hasAttribute("data-paw-msg"));
+  }
+
   document.addEventListener("change", function (e) {
     var t = e.target;
-    if (!t || t.tagName !== "INPUT" || t.type !== "checkbox" || t.name !== "paid") return;
-    if (!t.checked) return;
-    // 程式自己拍掉勾選時觸發的 change，直接放過，避免無限循環
+    if (!isSwatTarget(t) || !t.checked) return;
+    // 程式自己拍掉勾選時觸發的 change 會是「未勾」，這裡不會進來；pending 是防止連點
     if (pending.has(t)) return;
     var last = swatAt.get(t);
     if (last && Date.now() - last < SWAT_WINDOW) {
@@ -77,6 +86,61 @@
       return;
     }
     pending.add(t);
-    slap(t);
+    spawnPaw(t, swatMessage(t), function () {
+      t.checked = false;
+      t.dispatchEvent(new Event("change", { bubbles: true })); // 讓表格或 TODO 照常存檔
+      swatAt.set(t, Date.now());
+      pending.delete(t);
+    });
+  });
+
+  // ---- 2. 會跳確認框的表單：先讓貓掌掃過，再跳確認 --------------------------
+
+  var guardDone = new WeakSet();
+
+  document.addEventListener("submit", function (e) {
+    var form = e.target;
+    if (!form || !form.getAttribute || !/confirm\(/.test(form.getAttribute("onsubmit") || "")) return;
+    if (guardDone.has(form)) { // 我們自己補送出的那一次，放行讓確認框跳出
+      guardDone.delete(form);
+      return;
+    }
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    var msg = form.getAttribute("data-paw-msg") || "喵！這件事本喵要先拍一下再說。";
+    var button = form.querySelector("button") || form;
+    spawnPaw(button, msg, null);
+    setTimeout(function () {
+      guardDone.add(form);
+      if (typeof form.requestSubmit === "function") form.requestSubmit();
+      else form.submit();
+    }, GUARD_MS);
+  }, true);
+
+  // ---- 3. 睡貓：點一下叫醒，再點一下又睡 --------------------------------------
+
+  function catSay(cat, text) {
+    var say = cat.querySelector(".fun-cat-say");
+    if (!say) return;
+    say.textContent = text;
+    say.hidden = false;
+    clearTimeout(cat._sayTimer);
+    cat._sayTimer = setTimeout(function () { say.hidden = true; }, 1800);
+  }
+
+  function toggleCat(cat) {
+    var awake = cat.classList.toggle("awake");
+    cat.setAttribute("aria-label", awake ? "讓貓咪睡回去" : "叫醒貓咪");
+    catSay(cat, awake ? "喵？幹嘛吵本喵睡覺。" : "哼，這次放過你喵。");
+  }
+
+  document.addEventListener("click", function (e) {
+    var cat = e.target.closest && e.target.closest(".fun-cat");
+    if (cat) toggleCat(cat);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var cat = e.target.closest && e.target.closest(".fun-cat");
+    if (cat) { e.preventDefault(); toggleCat(cat); }
   });
 })();

@@ -101,3 +101,46 @@ body.fun-shake {
     transition: none !important;
   }
 }
+
+/* 睡貓：空白頁裡的貓，點一下叫醒 */
+.fun-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  vertical-align: middle;
+  cursor: pointer;
+  color: var(--fg);
+  user-select: none;
+}
+.fun-cat:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.fun-cat-svg { transition: transform .3s var(--spring); }
+.fun-cat:hover .fun-cat-svg { transform: scale(1.06); }
+.fun-cat-open { display: none; }
+.fun-cat.awake .fun-cat-open { display: inline; }
+.fun-cat.awake .fun-cat-shut { display: none; }
+.fun-cat.awake .fun-cat-zz { display: none; }
+.fun-cat-zz {
+  font-size: 12px;
+  color: var(--muted);
+  animation: fun-zz 2.4s ease-in-out infinite;
+}
+.fun-cat.awake .fun-cat-svg { animation: fun-cat-wiggle .5s var(--spring); }
+.fun-cat-say {
+  font-size: 13px;
+  color: var(--fg);
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  padding: 4px 9px;
+  box-shadow: 2px 2px 0 var(--line);
+  white-space: nowrap;
+}
+@keyframes fun-zz {
+  0%, 100% { opacity: .35; transform: translateY(0); }
+  50%      { opacity: 1;   transform: translateY(-4px); }
+}
+@keyframes fun-cat-wiggle {
+  0%, 100% { transform: rotate(0); }
+  25%      { transform: rotate(-6deg); }
+  75%      { transform: rotate(6deg); }
+}

@@ -27,7 +27,7 @@
             </td>
           </tr>
         {% else %}
-          <tr><td colspan="8" class="muted">還沒有紀錄喵！是不是都沒在打？給我去打！</td></tr>
+          <tr><td colspan="8" class="muted">還沒有紀錄喵！是不是都沒在打？給我去打！ {% include '_cat_sleep.html' %}</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -56,7 +56,7 @@
             <td>{% if p.guest_runs %}<span class="badge">陪打</span>{% endif %}</td>
           </tr>
         {% else %}
-          <tr><td colspan="8" class="muted">還沒有紀錄喵！是不是都沒在打？給我去打！</td></tr>
+          <tr><td colspan="8" class="muted">還沒有紀錄喵！是不是都沒在打？給我去打！ {% include '_cat_sleep.html' %}</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -117,7 +117,7 @@
           </tr>
           {% endif %}
         {% else %}
-          <tr><td colspan="6" class="muted">還沒有掉落物喵，給我去刷！</td></tr>
+          <tr><td colspan="6" class="muted">還沒有掉落物喵，給我去刷！ {% include '_cat_sleep.html' %}</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -141,7 +141,7 @@
             <td>{{ pay.item_names }}</td>
           </tr>
         {% else %}
-          <tr><td colspan="6" class="muted">還沒付過半毛錢喵！大家都在拖，給我付！</td></tr>
+          <tr><td colspan="6" class="muted">還沒付過半毛錢喵！大家都在拖，給我付！ {% include '_cat_sleep.html' %}</td></tr>
         {% endfor %}
       </tbody>
     </table>
