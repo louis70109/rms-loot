@@ -311,14 +311,59 @@ td.center input[type="checkbox"] { width: 18px; height: 18px; }
 .toast.ok { border-top-color: var(--ok); }
 .toast.error { background: var(--danger); color: #fff; border-top-color: #3a2410; }
 
-/* 手機 */
+/* 手機：導覽列橫向滑動、表格第一欄固定、按鈕與輸入框加大，避開瀏海與底部的橫條 */
 @media (max-width: 640px) {
-  body { font-size: 13px; }
-  main { padding: 16px 12px 40px; }
+  body { font-size: 14px; }
+  main { padding: 14px 12px 40px; }
+  h2 { font-size: 13px; padding: 5px 10px; }
+  .hint { font-size: 13px; }
+
+  .topbar { flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
+  .brand { border-right: 0; border-bottom: 2px solid #3a2410; padding: 10px 14px; font-size: 15px; }
+  .topbar nav { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .topbar nav::-webkit-scrollbar { display: none; }
+  .topbar nav a { flex: 0 0 auto; min-height: 44px; padding: 12px 14px; font-size: 14px; }
+  .topbar .who { margin-left: 0; border-left: 0; border-top: 2px solid #3a2410; padding: 8px 14px; font-size: 13px; }
+  .topbar .logout { border-left: 2px solid #3a2410; min-height: 44px; padding: 10px 14px; font-size: 14px; }
+
+  .page-head { flex-direction: column; align-items: stretch; gap: 10px; }
+  .page-head .btn { width: 100%; text-align: center; }
+  .actions-row { flex-wrap: wrap; }
+
+  .table-wrap { border-width: 3px; }
+  th, td { padding: 8px 8px; font-size: 14px; }
+  th { font-size: 12px; }
+  /* 橫向捲動時，第一欄（日期、名字、掉落物）固定在左邊 */
+  th:first-child, td:first-child { position: sticky; left: 0; z-index: 1; background: var(--panel); }
+  th:first-child { background: var(--wood); z-index: 2; }
+  tbody tr:nth-child(even) td:first-child { background: var(--stripe), var(--panel); }
+
+  input.cell { font-size: 16px; }
+  input.cell:not(.narrow):not(.num-in) { min-width: 120px; }
+  input.cell.narrow { width: 96px; }
+  input.cell.num-in { width: 84px; }
+
+  .btn, button { min-height: 44px; padding: 10px 16px; font-size: 15px; }
+  button.link { min-height: 40px; padding: 0 6px; }
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px; padding: 10px 10px; }
+  .paid-cell input[type="checkbox"], td.center input[type="checkbox"] { width: 22px; height: 22px; }
+
   .grid2, .grid4 { grid-template-columns: 1fr; }
-  .topbar nav a { padding: 10px 10px; font-size: 13px; }
-  .brand { padding: 10px 12px; }
-  .grand-total strong { font-size: 32px; }
+  form.form { max-width: none; }
+  .inline { flex-direction: column; align-items: stretch; }
+  .inline input { width: 100%; }
+  .pay-form { flex-direction: column; align-items: stretch; }
+  .pay-form input[type="date"] { width: 100%; }
+  .detail-row td { padding: 10px; }
+  .detail-table th, .detail-table td { white-space: normal; }
+
+  .grand-total { padding: 14px; }
+  .grand-total strong { font-size: 30px; }
+
+  .loan-thumb { width: 80px; height: 80px; }
+  .login-wall { margin-top: 6vh; padding: 20px; }
+  .storage-dialog { width: 92vw; padding: 18px; }
+  .toast { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
 }
 
 .grand-total small, .pay-amount small { font: 700 13px/1 var(--sans); margin-left: 4px; }
