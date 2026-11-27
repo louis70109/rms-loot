@@ -203,3 +203,92 @@ def test_anonymous_cannot_read_uploads(discord_client):
     app, client = discord_client
     resp = client.get("/uploads/anything.jpg")
     assert resp.status_code == 302  # 導向 Discord 登入
+
+
+# ---- 封存（冷資料）-------------------------------------------------------
+
+def test_archived_loans_are_hidden_until_requested(client, app):
+    _create_loan(client, item="進行中的裝備")
+    _create_loan(client, item="封存的裝備")
+    client.post("/loans/2/archive")
+    default = client.get("/loans").get_data(as_text=True)
+    assert "進行中的裝備" in default
+    assert "封存的裝備" not in default
+    archived = client.get("/loans?view=archived").get_data(as_text=True)
+    assert "封存的裝備" in archived
+    assert "進行中的裝備" not in archived
+
+
+def test_unarchive_brings_it_back(client, app):
+    _create_loan(client, item="來回的裝備")
+    client.post("/loans/1/archive")
+    assert "來回的裝備" not in client.get("/loans").get_data(as_text=True)
+    client.post("/loans/1/unarchive")
+    assert "來回的裝備" in client.get("/loans").get_data(as_text=True)
+
+
+def test_archive_returned_only_touches_returned_items(client, app):
+    _create_loan(client, item="已歸還")
+    _create_loan(client, item="還沒還")
+    client.post("/loans/1/edit", data={"direction": "lent", "item": "已歸還", "quantity": "1",
+                                       "returned": "1", "returned_date": "2026-11-20"})
+    resp = client.post("/loans/archive-returned", follow_redirects=True)
+    assert "已封存 1 筆" in resp.get_data(as_text=True)
+    db = _db(app)
+    rows = {r["item"]: r["archived"] for r in db.execute("SELECT item, archived FROM loans")}
+    assert rows == {"已歸還": 1, "還沒還": 0}
+
+
+def test_archive_button_on_edit_page(client, app):
+    _create_loan(client, item="表單封存")
+    page = client.get("/loans/1/edit").get_data(as_text=True)
+    assert "封存這筆紀錄" in page
+    client.post("/loans/1/archive")
+    page = client.get("/loans/1/edit").get_data(as_text=True)
+    assert "取消封存" in page
+
+
+def test_archived_counts_show_in_tabs(client, app):
+    _create_loan(client, item="a")
+    _create_loan(client, item="b")
+    client.post("/loans/1/archive")
+    html = client.get("/loans").get_data(as_text=True)
+    assert "進行中（1）" in html
+    assert "已封存（1）" in html
+
+
+def test_member_cannot_archive(discord_client):
+    app, client = discord_client
+    with client.session_transaction() as s:
+        s["role"] = "member"
+        s["name"] = "ERIC"
+    assert client.post("/loans/1/archive").status_code == 403
+    assert client.post("/loans/archive-returned").status_code == 403
+
+
+def test_old_database_gets_archived_column(tmp_path, monkeypatch):
+    for k in ("APP_PASSWORD", "RMS_REQUIRE_AUTH"):
+        monkeypatch.delenv(k, raising=False)
+    path = tmp_path / "old.db"
+    old = sqlite3.connect(path)
+    old.executescript("""
+        CREATE TABLE loans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            direction TEXT NOT NULL CHECK (direction IN ('lent', 'borrowed')),
+            counterpart TEXT NOT NULL DEFAULT '',
+            item TEXT NOT NULL,
+            quantity INTEGER NOT NULL DEFAULT 1,
+            loan_date TEXT NOT NULL DEFAULT '',
+            note TEXT NOT NULL DEFAULT '',
+            returned INTEGER NOT NULL DEFAULT 0,
+            returned_date TEXT NOT NULL DEFAULT ''
+        );
+        INSERT INTO loans (direction, item) VALUES ('lent', '舊資料');
+    """)
+    old.commit()
+    old.close()
+    app = create_app(path)
+    db = sqlite3.connect(app.config["DB_PATH"])
+    cols = {r[1] for r in db.execute("PRAGMA table_info(loans)")}
+    assert "archived" in cols
+    assert db.execute("SELECT archived FROM loans WHERE item = '舊資料'").fetchone()[0] == 0

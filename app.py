@@ -623,6 +623,9 @@ def create_app(db_path=None):
     # 舊資料庫補上 paid_date 欄位（CREATE TABLE IF NOT EXISTS 不會改既有的表）
     if "paid_date" not in {r[1] for r in conn.execute("PRAGMA table_info(drops)")}:
         conn.execute("ALTER TABLE drops ADD COLUMN paid_date TEXT NOT NULL DEFAULT ''")
+    # 借還紀錄的封存旗標（封存後預設不顯示）
+    if "archived" not in {r[1] for r in conn.execute("PRAGMA table_info(loans)")}:
+        conn.execute("ALTER TABLE loans ADD COLUMN archived INTEGER NOT NULL DEFAULT 0")
     conn.commit()
     conn.close()
 

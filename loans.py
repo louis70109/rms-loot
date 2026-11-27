@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS loans (
     loan_date TEXT NOT NULL DEFAULT '',
     note TEXT NOT NULL DEFAULT '',
     returned INTEGER NOT NULL DEFAULT 0,
-    returned_date TEXT NOT NULL DEFAULT ''
+    returned_date TEXT NOT NULL DEFAULT '',
+    archived INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS loan_images (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -124,15 +125,56 @@ def register_loans(app, get_db, known_names):
     def loans_list():
         db = get_db()
         direction = request.args.get("direction", "all")
+        view = "archived" if request.args.get("view") == "archived" else "active"
+        archived = 1 if view == "archived" else 0
         if direction in DIRECTIONS:
-            rows = db.execute("SELECT * FROM loans WHERE direction = ? ORDER BY id DESC",
-                              (direction,)).fetchall()
+            rows = db.execute("SELECT * FROM loans WHERE archived = ? AND direction = ? ORDER BY id DESC",
+                              (archived, direction)).fetchall()
         else:
             direction = "all"
-            rows = db.execute("SELECT * FROM loans ORDER BY id DESC").fetchall()
+            rows = db.execute("SELECT * FROM loans WHERE archived = ? ORDER BY id DESC",
+                              (archived,)).fetchall()
+        counts = {
+            "active": db.execute("SELECT COUNT(*) FROM loans WHERE archived = 0").fetchone()[0],
+            "archived": db.execute("SELECT COUNT(*) FROM loans WHERE archived = 1").fetchone()[0],
+            "returned_active": db.execute(
+                "SELECT COUNT(*) FROM loans WHERE archived = 0 AND returned = 1").fetchone()[0],
+        }
+        # 封存的紀錄只在「已封存」檢視才會列出，所以圖片也只在那時才查詢與載入
         images = images_for(db, [r["id"] for r in rows])
         return render_template("loans.html", loans=rows, images=images, direction=direction,
-                               directions=DIRECTIONS, can_edit=can_edit())
+                               directions=DIRECTIONS, can_edit=can_edit(), view=view, counts=counts)
+
+    def set_archived(loan_id, value):
+        if not can_edit():
+            abort(403)
+        db = get_db()
+        if db.execute("SELECT 1 FROM loans WHERE id = ?", (loan_id,)).fetchone() is None:
+            abort(404)
+        db.execute("UPDATE loans SET archived = ? WHERE id = ?", (value, loan_id))
+        db.commit()
+
+    @app.post("/loans/<int:loan_id>/archive")
+    def loan_archive(loan_id):
+        set_archived(loan_id, 1)
+        flash("已封存，預設不再顯示", "ok")
+        return redirect(request.form.get("next") or url_for("loans_list"))
+
+    @app.post("/loans/<int:loan_id>/unarchive")
+    def loan_unarchive(loan_id):
+        set_archived(loan_id, 0)
+        flash("已取消封存", "ok")
+        return redirect(request.form.get("next") or url_for("loans_list", view="archived"))
+
+    @app.post("/loans/archive-returned")
+    def loans_archive_returned():
+        if not can_edit():
+            abort(403)
+        db = get_db()
+        cur = db.execute("UPDATE loans SET archived = 1 WHERE archived = 0 AND returned = 1")
+        db.commit()
+        flash(f"已封存 {cur.rowcount} 筆已歸還的紀錄", "ok")
+        return redirect(url_for("loans_list"))
 
     @app.route("/loans/new", methods=["GET", "POST"])
     def loan_new():
