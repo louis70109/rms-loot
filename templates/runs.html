@@ -37,19 +37,19 @@
           {% endfor %}
           <td><input class="cell" name="note" value="{{ r.note }}" form="{{ f }}"></td>
           <td class="actions">
-            <form method="post" action="{{ url_for('run_delete', run_id=r.id) }}" onsubmit="return confirm('喵？真的要刪第 {{ r.id }} 場嗎？想清楚再按喵。')">
+            <form method="post" action="{{ url_for('run_delete', run_id=r.id) }}" onsubmit="return confirm('喵！真的要刪第 {{ r.id }} 場？想清楚再按，本喵不幫你撿喵。')">
               <button class="link danger">刪除</button>
             </form>
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="10" class="muted">還沒有紀錄喵，你是都沒在打嗎？按「新增一場」，或到「匯入 / 設定」匯入 CSV。</td></tr>
+        <tr><td colspan="10" class="muted">還沒有紀錄喵！你是都沒在打？給我去打！按「新增一場」，或到「匯入 / 設定」匯入 CSV。</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 <form method="post" action="{{ url_for('run_copy_last') }}" class="add-row">
   <button class="btn">＋ 沿用上一筆新增一列</button>
-  <span class="hint">會複製最後一筆的全部欄位，本喵幫你偷懶，你再去改要換的地方喵。</span>
+  <span class="hint">會複製最後一筆的全部欄位，本喵幫你偷懶，你自己去改要換的地方喵，別想一次全改。</span>
 </form>
 {% endblock %}

@@ -39,13 +39,13 @@
           </td>
           <td><input class="cell narrow" type="date" name="paid_date" value="{{ d.paid_date }}" form="{{ f }}"></td>
           <td class="actions">
-            <form method="post" action="{{ url_for('drop_delete', drop_id=d.id) }}" onsubmit="return confirm('喵？真的要刪「{{ d.item }}」嗎？不後悔喵？')">
+            <form method="post" action="{{ url_for('drop_delete', drop_id=d.id) }}" onsubmit="return confirm('喵！真的要刪「{{ d.item }}」？不准後悔喵！')">
               <button class="link danger">刪除</button>
             </form>
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="9" class="muted">還沒有掉落物喵，運氣是有多差？</td></tr>
+        <tr><td colspan="9" class="muted">還沒有掉落物喵，運氣差成這樣？給我去刷！</td></tr>
       {% endfor %}
     </tbody>
   </table>

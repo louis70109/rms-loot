@@ -96,11 +96,11 @@ def register_loans(app, get_db, known_names):
         if not files:
             return 0
         if len(files) > MAX_FILES_PER_UPLOAD:
-            flash(f"一次最多 {MAX_FILES_PER_UPLOAD} 張喵，貪心的人類。", "error")
+            flash(f"一次最多 {MAX_FILES_PER_UPLOAD} 張喵，貪心的人類，給我分批來！", "error")
             return 0
         status = storage_status(str(upload_dir.parent))
         if status and status["level"] == "critical":
-            flash("倉庫快塞爆了（超過 95%），圖片本喵不收喵，先刪一些或擴充 volume。", "error")
+            flash("倉庫快塞爆了（超過 95%），本喵不收圖喵！先刪一些或擴充 volume。", "error")
             return 0
         upload_dir.mkdir(parents=True, exist_ok=True)
         saved = 0
@@ -108,7 +108,7 @@ def register_loans(app, get_db, known_names):
             try:
                 data = compress_image(f.read())
             except ImageRejected:
-                flash(f"「{f.filename}」不是圖片喵，本喵跳過了。", "error")
+                flash(f"「{f.filename}」不是圖片喵！本喵直接跳過。", "error")
                 continue
             name = f"{uuid.uuid4().hex}.jpg"
             (upload_dir / name).write_bytes(data)
@@ -157,7 +157,7 @@ def register_loans(app, get_db, known_names):
     @app.post("/loans/<int:loan_id>/archive")
     def loan_archive(loan_id):
         set_archived(loan_id, 1)
-        flash("已封進冷凍櫃喵，平常不拿出來。", "ok")
+        flash("已封進冷凍櫃喵，平常不准拿出來。", "ok")
         return redirect(request.form.get("next") or url_for("loans_list"))
 
     @app.post("/loans/<int:loan_id>/unarchive")
@@ -219,7 +219,7 @@ def register_loans(app, get_db, known_names):
                     (data["direction"], data["counterpart"], data["item"], data["quantity"],
                      data["loan_date"], data["note"], data["returned"], data["returned_date"], loan_id))
                 db.commit()
-                flash("存好了喵。", "ok")
+                flash("存好了喵，別再亂改。", "ok")
                 return redirect(url_for("loan_edit", loan_id=loan_id))
         images = images_for(db, [loan_id]).get(loan_id, [])
         return render_template("loan_form.html", title="編輯借還紀錄", action=url_for("loan_edit", loan_id=loan_id),
@@ -249,7 +249,7 @@ def register_loans(app, get_db, known_names):
         db.execute("DELETE FROM loan_images WHERE id = ?", (image_id,))
         db.commit()
         remove_files([row["filename"]])
-        flash("圖片刪掉了喵，後悔別來找本喵。", "ok")
+        flash("圖片刪掉了喵，後悔也別來找本喵！", "ok")
         return redirect(url_for("loan_edit", loan_id=row["loan_id"]))
 
     @app.post("/loans/<int:loan_id>/delete")
@@ -263,7 +263,7 @@ def register_loans(app, get_db, known_names):
         db.execute("DELETE FROM loans WHERE id = ?", (loan_id,))
         db.commit()
         remove_files(names)
-        flash("整筆刪光光了喵，別哭喵。", "ok")
+        flash("整筆刪光了喵，別哭給本喵看！", "ok")
         return redirect(url_for("loans_list"))
 
     @app.get("/uploads/<path:filename>")

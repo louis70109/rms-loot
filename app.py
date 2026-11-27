@@ -507,7 +507,7 @@ def create_app(db_path=None):
                 # TODO 的資料依登入者分開，owner 與 member 都能用自己的清單；其他人回 401（不導向登入頁）
                 if role in ("owner", "member"):
                     return None
-                return jsonify(ok=False, error="滾去登入喵，你是誰？"), 401
+                return jsonify(ok=False, error="給我先登入，你是誰喵！"), 401
             if role == "owner":
                 return None
             if role == "member":
@@ -516,7 +516,7 @@ def create_app(db_path=None):
                     return None
                 if request.method == "POST" and re.fullmatch(r"/drops/\d+/edit", request.path):
                     return None  # 權限在 drop_edit 裡逐筆檢查
-                return Response("這個本喵不讓你動喵，別亂點。", 403)
+                return Response("本喵說不準，你敢亂點試試看喵！", 403)
             if role == "unbound" and request.path == "/auth/bind":
                 return None
             if request.method == "GET":
@@ -524,7 +524,7 @@ def create_app(db_path=None):
                     return redirect(url_for("discord_bind"))
                 # 未登入：先顯示擋板頁面，而不是直接丟到 Discord
                 return render_template("login_wall.html"), 401
-            return Response("滾去登入喵。", 401)
+            return Response("給我滾去登入喵！", 401)
         expected = app.config["APP_PASSWORD"]
         if not expected:
             if app.config["REQUIRE_AUTH"]:
@@ -594,14 +594,14 @@ def create_app(db_path=None):
         if request.method == "POST":
             name = clean(request.form.get("name"))
             if not name or name.lower() == ME.lower():
-                flash("喵？要選一個名字啦。", "error")
+                flash("給我選一個名字喵！", "error")
             else:
                 try:
                     db.execute("INSERT INTO bindings (discord_id, name) VALUES (?, ?)",
                                (session["discord_id"], name))
                     db.commit()
                 except sqlite3.IntegrityError:
-                    flash(f"「{name}」已經被別隻貓綁走了喵，選別的名字吧。", "error")
+                    flash(f"「{name}」已經被別隻貓搶走了喵，給我選別的！", "error")
                 else:
                     session["role"], session["name"] = "member", name
                     flash(f"綁好了喵，你現在是 {name}。", "ok")
@@ -654,7 +654,7 @@ def create_app(db_path=None):
             for message in exc.errors[:20]:
                 flash(message, "error")
             if len(exc.errors) > 20:
-                flash(f"還有 {len(exc.errors) - 20} 個錯誤本喵懶得列了喵，修好再匯入。", "error")
+                flash(f"還有 {len(exc.errors) - 20} 個錯誤本喵懶得列了喵，修好再來匯入！", "error")
         except ValueError as exc:
             db.rollback()
             flash(str(exc), "error")
@@ -709,7 +709,7 @@ def create_app(db_path=None):
             if not errors:
                 save_run(db, data)
                 db.commit()
-                flash("新增好了喵，又一場。", "ok")
+                flash("新增好了喵，又一場，給我繼續打！", "ok")
                 return redirect(url_for("runs"))
         return render_template("run_form.html", title="新增分贓紀錄", data=data, errors=errors,
                                names=known_names(db), action=url_for("run_new"))
@@ -732,7 +732,7 @@ def create_app(db_path=None):
             if not errors:
                 save_run(db, data, run_id)
                 db.commit()
-                flash("改好了喵。", "ok")
+                flash("改好了喵，別再改來改去。", "ok")
                 return redirect(url_for("runs"))
         return render_template("run_form.html", title=f"編輯第 {run_id} 場", data=data, errors=errors,
                                names=known_names(db), action=url_for("run_edit", run_id=run_id))
@@ -755,7 +755,7 @@ def create_app(db_path=None):
         db = get_db()
         db.execute("DELETE FROM runs WHERE id = ?", (run_id,))
         db.commit()
-        flash("刪掉了喵，眼不見為淨。", "ok")
+        flash("刪掉了喵，別回頭看。", "ok")
         return redirect(url_for("runs"))
 
     # 掉落物
@@ -791,7 +791,7 @@ def create_app(db_path=None):
             # 成員只能用表格改「持有人是自己」的掉落物；持有人與付款狀態不能改
             if request.method != "POST" or not request.form.get("inline") or \
                     row["member"].lower() != session.get("name", "").lower():
-                return Response("這個本喵不讓你動喵，別亂點。", 403)
+                return Response("本喵說不準，你敢亂點試試看喵！", 403)
         if request.method == "POST":
             data, errors = read_drop_form(db, request.form)
             if session.get("role") == "member":
@@ -823,7 +823,7 @@ def create_app(db_path=None):
         db = get_db()
         db.execute("DELETE FROM drops WHERE id = ?", (drop_id,))
         db.commit()
-        flash("掉落物刪掉了喵，下次別手滑。", "ok")
+        flash("掉落物刪掉了喵，下次手給我穩一點！", "ok")
         return redirect(url_for("drops"))
 
     # 設定 / 匯入
@@ -858,7 +858,7 @@ def create_app(db_path=None):
             if not (0 <= fee < 100 and 0 <= share <= 100):
                 raise ValueError
         except ValueError:
-            flash("喵？手續費要填 0 到 100 之間（不含 100），分配比例也是喵。", "error")
+            flash("喵！手續費要填 0 到 100 之間（不含 100），分配比例也是，別亂填！", "error")
             return redirect(url_for("settings"))
         set_setting(db, "payout_fee_percent", fee)
         set_setting(db, "payout_share_percent", share)

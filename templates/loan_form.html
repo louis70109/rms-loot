@@ -68,14 +68,14 @@
             <img class="loan-thumb" src="{{ url_for('uploaded_file', filename=img.filename) }}" alt="圖片 {{ loop.index }}" loading="lazy">
           </a>
           <form method="post" action="{{ url_for('loan_image_delete', image_id=img.id) }}"
-                onsubmit="return confirm('這張真的要刪喵？')">
+                onsubmit="return confirm('這張真的要刪？')">
             <button class="btn">刪除圖片</button>
           </form>
         </figure>
       {% endfor %}
     </div>
   {% else %}
-    <p class="muted">沒有圖片喵，你是用說的喔？</p>
+    <p class="muted">沒有圖片喵！你是用說的喔？給我拍照！</p>
   {% endif %}
   <form method="post" action="{{ url_for('loan_images_add', loan_id=loan_id) }}" enctype="multipart/form-data" class="actions-row">
     <input type="file" name="files" accept="image/*" multiple>
@@ -102,7 +102,7 @@
   <h2>刪除</h2>
   <p class="muted">刪掉就回不來了喵，圖片也會一起陪葬。</p>
   <form method="post" action="{{ url_for('loan_delete', loan_id=loan_id) }}"
-        onsubmit="return confirm('整筆刪光光喵，你確定？')">
+        onsubmit="return confirm('整筆刪光，你確定？再想一次！')">
     <button class="btn">刪除這筆紀錄</button>
   </form>
 </section>

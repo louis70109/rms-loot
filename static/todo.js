@@ -49,8 +49,8 @@
   }
 
   function failed(e) {
-    if (e && e.status === 401) say("滾去登入 Discord 再來玩 TODO 啦。", true);
-    else say("喵！存不進去：" + (e && e.message ? e.message : "未知錯誤") + "。本喵已經幫你還原了。", true);
+    if (e && e.status === 401) say("給我先登入 Discord，再來碰 TODO 喵！", true);
+    else say("喵！存不進去：" + (e && e.message ? e.message : "未知錯誤") + "。本喵已經幫你還原，別再亂來。", true);
   }
 
   // ---- 載入與舊資料搬移 ----------------------------------------------------
@@ -202,7 +202,7 @@
       list.innerHTML = "";
       if (!loaded) return;
       if (items.length === 0) {
-        list.appendChild(el("li", "empty", "空空如也，快打點字啊。"));
+        list.appendChild(el("li", "empty", "空空如也喵！快打字，別發呆！"));
         return;
       }
       items.forEach(function (item) { list.appendChild(renderItem(group, item)); });
@@ -330,7 +330,7 @@
     linkInput.addEventListener("change", function () {
       var v = linkInput.value.trim();
       if (v && !safeLink(v)) {
-        warn.textContent = "連結要以 http:// 或 https:// 開頭喵，本喵沒幫你存。";
+        warn.textContent = "連結要 http:// 或 https:// 開頭喵！本喵不存亂七八糟的東西。";
         linkInput.value = item.link;
         return;
       }

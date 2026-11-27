@@ -153,7 +153,7 @@ def test_upload_refused_when_storage_is_critical(client, app, monkeypatch):
     monkeypatch.setattr(storage, "_usage", lambda p: (0.97, 1_000_000, 970_000))
     resp = client.post("/loans/1/images", data={"files": [(BytesIO(_png()), "a.png")]},
                        content_type="multipart/form-data", follow_redirects=True)
-    assert "圖片本喵不收喵" in resp.get_data(as_text=True)
+    assert "本喵不收圖喵" in resp.get_data(as_text=True)
     assert _db(app).execute("SELECT COUNT(*) FROM loan_images").fetchone()[0] == 0
 
 
