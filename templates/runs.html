@@ -37,13 +37,13 @@
           {% endfor %}
           <td><input class="cell" name="note" value="{{ r.note }}" form="{{ f }}"></td>
           <td class="actions">
-            <form method="post" action="{{ url_for('run_delete', run_id=r.id) }}" onsubmit="return confirm('確定刪除第 {{ r.id }} 場？')">
+            <form method="post" action="{{ url_for('run_delete', run_id=r.id) }}" onsubmit="return confirm('真的要刪第 {{ r.id }} 場喔？想清楚再按。')">
               <button class="link danger">刪除</button>
             </form>
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="10" class="muted">還沒有紀錄。按「新增一場」，或到「匯入 / 設定」匯入 CSV。</td></tr>
+        <tr><td colspan="10" class="muted">還沒有紀錄，你是都沒在打喔？按「新增一場」，或到「匯入 / 設定」匯入 CSV。</td></tr>
       {% endfor %}
     </tbody>
   </table>

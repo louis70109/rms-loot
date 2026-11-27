@@ -202,7 +202,7 @@ def test_owner_can_create(discord_client):
 def test_anonymous_cannot_read_uploads(discord_client):
     app, client = discord_client
     resp = client.get("/uploads/anything.jpg")
-    assert resp.status_code == 302  # 導向 Discord 登入
+    assert resp.status_code == 401  # 未登入：顯示擋板頁面
 
 
 # ---- 封存（冷資料）-------------------------------------------------------

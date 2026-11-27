@@ -219,7 +219,7 @@ def register_loans(app, get_db, known_names):
                     (data["direction"], data["counterpart"], data["item"], data["quantity"],
                      data["loan_date"], data["note"], data["returned"], data["returned_date"], loan_id))
                 db.commit()
-                flash("已儲存", "ok")
+                flash("存好了啦。", "ok")
                 return redirect(url_for("loan_edit", loan_id=loan_id))
         images = images_for(db, [loan_id]).get(loan_id, [])
         return render_template("loan_form.html", title="編輯借還紀錄", action=url_for("loan_edit", loan_id=loan_id),
@@ -249,7 +249,7 @@ def register_loans(app, get_db, known_names):
         db.execute("DELETE FROM loan_images WHERE id = ?", (image_id,))
         db.commit()
         remove_files([row["filename"]])
-        flash("已刪除圖片", "ok")
+        flash("圖片刪掉了，後悔別來找我。", "ok")
         return redirect(url_for("loan_edit", loan_id=row["loan_id"]))
 
     @app.post("/loans/<int:loan_id>/delete")
@@ -263,7 +263,7 @@ def register_loans(app, get_db, known_names):
         db.execute("DELETE FROM loans WHERE id = ?", (loan_id,))
         db.commit()
         remove_files(names)
-        flash("已刪除借還紀錄與其圖片", "ok")
+        flash("整筆刪光光，別哭啊。", "ok")
         return redirect(url_for("loans_list"))
 
     @app.get("/uploads/<path:filename>")

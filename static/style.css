@@ -296,3 +296,9 @@ td.center input[type="checkbox"] { width: 16px; height: 16px; }
 
 /* 借還列表的封存按鈕 */
 .archive-form { margin-top: 6px; }
+
+/* 未登入的擋板頁面 */
+.login-wall { max-width: 420px; margin: 15vh auto 0; padding: 24px; text-align: center; }
+.login-wall h2 { font-size: 22px; margin: 0 0 12px; color: var(--fg); text-transform: none; letter-spacing: 0; }
+.login-wall p { margin: 0 0 10px; }
+.login-wall .btn { display: inline-block; text-decoration: none; margin-top: 8px; }

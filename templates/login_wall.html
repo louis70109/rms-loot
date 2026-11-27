@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>欸，你誰 · RMS 分貝表</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="login-wall">
+    <h2>欸，你誰？</h2>
+    <p>還沒登入就想看分貝？滾去登入啦。</p>
+    <p class="muted">用 Discord 登入，我才知道你是哪一個兄弟。</p>
+    <p><a class="btn" href="{{ url_for('discord_login') }}">好啦好啦，去登入</a></p>
+  </main>
+</body>
+</html>

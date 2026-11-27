@@ -49,7 +49,7 @@
   }
 
   function failed(e) {
-    if (e && e.status === 401) say("請先登入 Discord 才能使用 TODO。", true);
+    if (e && e.status === 401) say("滾去登入 Discord 再來玩 TODO 啦。", true);
     else say("儲存失敗：" + (e && e.message ? e.message : "未知錯誤") + "。畫面已還原。", true);
   }
 
@@ -202,7 +202,7 @@
       list.innerHTML = "";
       if (!loaded) return;
       if (items.length === 0) {
-        list.appendChild(el("li", "empty", "還沒有項目"));
+        list.appendChild(el("li", "empty", "空空如也，快打點字啊。"));
         return;
       }
       items.forEach(function (item) { list.appendChild(renderItem(group, item)); });

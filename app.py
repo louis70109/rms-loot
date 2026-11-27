@@ -507,7 +507,7 @@ def create_app(db_path=None):
                 # TODO 的資料依登入者分開，owner 與 member 都能用自己的清單；其他人回 401（不導向登入頁）
                 if role in ("owner", "member"):
                     return None
-                return jsonify(ok=False, error="請先登入"), 401
+                return jsonify(ok=False, error="滾去登入啦，你是誰？"), 401
             if role == "owner":
                 return None
             if role == "member":
@@ -516,14 +516,15 @@ def create_app(db_path=None):
                     return None
                 if request.method == "POST" and re.fullmatch(r"/drops/\d+/edit", request.path):
                     return None  # 權限在 drop_edit 裡逐筆檢查
-                return Response("沒有權限", 403)
+                return Response("這個你不能動啦，別亂點。", 403)
             if role == "unbound" and request.path == "/auth/bind":
                 return None
             if request.method == "GET":
                 if role == "unbound":
                     return redirect(url_for("discord_bind"))
-                return redirect(url_for("discord_login"))
-            return Response("請先登入", 401)
+                # 未登入：先顯示擋板頁面，而不是直接丟到 Discord
+                return render_template("login_wall.html"), 401
+            return Response("滾去登入啦。", 401)
         expected = app.config["APP_PASSWORD"]
         if not expected:
             if app.config["REQUIRE_AUTH"]:
@@ -689,7 +690,7 @@ def create_app(db_path=None):
                    (group["name"], paid_date, group["payout"], group["unpaid_sum"], len(ids),
                     "、".join(it["item"] for it in group["sold_items"]), group["formula"]))
         db.commit()
-        flash(f"已付給 {group['name']} {group['payout']:.2f}（{len(ids)} 件），付款日 {paid_date}", "ok")
+        flash(f"錢給 {group['name']} 了啦，{group['payout']:.2f} 楓幣，{len(ids)} 件，付款日 {paid_date}。", "ok")
         return redirect(url_for("index"))
 
     # 分贓紀錄
@@ -754,7 +755,7 @@ def create_app(db_path=None):
         db = get_db()
         db.execute("DELETE FROM runs WHERE id = ?", (run_id,))
         db.commit()
-        flash("已刪除分贓紀錄", "ok")
+        flash("刪掉了啦，眼不見為淨。", "ok")
         return redirect(url_for("runs"))
 
     # 掉落物
@@ -790,7 +791,7 @@ def create_app(db_path=None):
             # 成員只能用表格改「持有人是自己」的掉落物；持有人與付款狀態不能改
             if request.method != "POST" or not request.form.get("inline") or \
                     row["member"].lower() != session.get("name", "").lower():
-                return Response("沒有權限", 403)
+                return Response("這個你不能動啦，別亂點。", 403)
         if request.method == "POST":
             data, errors = read_drop_form(db, request.form)
             if session.get("role") == "member":
@@ -822,7 +823,7 @@ def create_app(db_path=None):
         db = get_db()
         db.execute("DELETE FROM drops WHERE id = ?", (drop_id,))
         db.commit()
-        flash("已刪除掉落物", "ok")
+        flash("掉落物刪掉了，下次別手滑。", "ok")
         return redirect(url_for("drops"))
 
     # 設定 / 匯入
