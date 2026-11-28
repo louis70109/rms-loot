@@ -292,3 +292,14 @@ def test_old_database_gets_archived_column(tmp_path, monkeypatch):
     cols = {r[1] for r in db.execute("PRAGMA table_info(loans)")}
     assert "archived" in cols
     assert db.execute("SELECT archived FROM loans WHERE item = '舊資料'").fetchone()[0] == 0
+
+
+def test_loan_photos_open_in_page_with_a_close_button(client, app):
+    _create_loan(client, item="燈箱測試")
+    client.post("/loans/1/images", data={"files": [(BytesIO(_png()), "a.png")]},
+                content_type="multipart/form-data")
+    html = client.get("/loans").get_data(as_text=True)
+    assert "data-lightbox" in html
+    assert "lightbox.js" in client.get("/loans").get_data(as_text=True)
+    edit = client.get("/loans/1/edit").get_data(as_text=True)
+    assert "data-lightbox" in edit
