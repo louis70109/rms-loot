@@ -63,6 +63,23 @@
   }
 
   // ---- 1. 勾選框：拍掉勾，再按一次放行 ----------------------------------
+  // TODO 每次勾選後都會整頁重畫，勾選框會換成新元素，所以有 id 的用 id 記，沒有 id 的才用元素本身記。
+  // 放行狀態保留到使用者取消勾選為止；取消勾選後，下一次勾又會被拍。
+  var swatById = {};
+  var swatEl = new WeakMap();
+  var pendingById = {};
+  var pendingEl = new WeakSet();
+
+  function swatState(t) { return t.id ? swatById[t.id] : swatEl.get(t); }
+  function setSwatState(t, v) {
+    if (t.id) { if (v) swatById[t.id] = v; else delete swatById[t.id]; }
+    else if (v) swatEl.set(t, v); else swatEl.delete(t);
+  }
+  function isPending(t) { return t.id ? !!pendingById[t.id] : pendingEl.has(t); }
+  function setPending(t, v) {
+    if (t.id) { if (v) pendingById[t.id] = true; else delete pendingById[t.id]; }
+    else if (v) pendingEl.add(t); else pendingEl.delete(t);
+  }
 
   function swatMessage(t) {
     if (t.getAttribute("data-paw-msg")) return t.getAttribute("data-paw-msg");
@@ -77,20 +94,16 @@
 
   document.addEventListener("change", function (e) {
     var t = e.target;
-    if (!isSwatTarget(t) || !t.checked) return;
-    // 程式自己拍掉勾選時觸發的 change 會是「未勾」，這裡不會進來；pending 是防止連點
-    if (pending.has(t)) return;
-    var last = swatAt.get(t);
-    if (last && Date.now() - last < SWAT_WINDOW) {
-      swatAt.delete(t); // 第二次按，放行
-      return;
-    }
-    pending.add(t);
+    if (!isSwatTarget(t)) return;
+    if (!t.checked) { setSwatState(t, null); return; } // 取消勾選：重置，下次勾又會被拍
+    if (isPending(t)) return;
+    if (swatState(t) === "armed") { setSwatState(t, null); return; } // 再勾一次：放行
+    setPending(t, true);
     spawnPaw(t, swatMessage(t), function () {
       t.checked = false;
-      t.dispatchEvent(new Event("change", { bubbles: true })); // 讓表格或 TODO 照常存檔
-      swatAt.set(t, Date.now());
-      pending.delete(t);
+      t.dispatchEvent(new Event("change", { bubbles: true })); // 讓表格或 TODO 照常存檔（會重置狀態）
+      setSwatState(t, "armed");                                // 然後才設成「下次勾就放行」
+      setPending(t, false);
     });
   });
 
