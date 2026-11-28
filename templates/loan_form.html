@@ -64,7 +64,7 @@
     <div class="loan-thumbs">
       {% for img in images %}
         <figure>
-          <a href="{{ url_for('uploaded_file', filename=img.filename) }}" target="_blank" rel="noopener">
+          <a href="{{ url_for('uploaded_file', filename=img.filename) }}" data-lightbox data-alt="圖片 {{ loop.index }}">
             <img class="loan-thumb" src="{{ url_for('uploaded_file', filename=img.filename) }}" alt="圖片 {{ loop.index }}" loading="lazy">
           </a>
           <form method="post" action="{{ url_for('loan_image_delete', image_id=img.id) }}"

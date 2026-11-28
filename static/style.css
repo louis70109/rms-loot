@@ -404,3 +404,22 @@ td.center input[type="checkbox"] { width: 18px; height: 18px; }
 .login-wall h2 { font-size: 22px; margin: 0 0 12px; }
 .login-wall p { margin: 0 0 10px; }
 .login-wall .btn { display: inline-block; text-decoration: none; margin-top: 8px; }
+
+/* 圖片燈箱：頁面內放大，有關閉按鈕 */
+dialog.lightbox {
+  border: 4px solid var(--line);
+  background: var(--panel);
+  padding: 0;
+  max-width: 95vw;
+  max-height: 95vh;
+  box-shadow: 6px 6px 0 rgba(58, 36, 16, .4);
+}
+dialog.lightbox::backdrop { background: rgba(26, 36, 70, .75); }
+dialog.lightbox img { display: block; max-width: 95vw; max-height: calc(95vh - 56px); object-fit: contain; }
+dialog.lightbox .lightbox-close {
+  display: block;
+  margin-left: auto;
+  min-height: 44px;
+  padding: 10px 18px;
+  font-size: 15px;
+}

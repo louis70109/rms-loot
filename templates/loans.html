@@ -47,7 +47,7 @@
           <td>{% if l.returned %}已歸還 {{ l.returned_date }}{% else %}未歸還{% endif %}</td>
           <td>
             {% for img in images.get(l.id, []) %}
-              <a href="{{ url_for('uploaded_file', filename=img.filename) }}" target="_blank" rel="noopener"><img class="loan-thumb" src="{{ url_for('uploaded_file', filename=img.filename) }}" alt="{{ l.item }}" loading="lazy"></a>
+              <a href="{{ url_for('uploaded_file', filename=img.filename) }}" data-lightbox data-alt="{{ l.item }}"><img class="loan-thumb" src="{{ url_for('uploaded_file', filename=img.filename) }}" alt="{{ l.item }}" loading="lazy"></a>
             {% endfor %}
           </td>
         </tr>
